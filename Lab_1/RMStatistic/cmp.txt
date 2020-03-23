@@ -1,0 +1,5 @@
+在RM的作法中, 會確保period較小的task有最大的優先權被執行, 因此可以看得出t1rm的miss ratio很少, 不過t3rm因為有較大的period, 所以優先權較低, 也因此可以看到miss rate較t1rm高很多
+
+在RMI的作法中, 會確保period較大的task有最大的優先權, 因此可以看出t3rmi的miss ratio相比t3rm來的小, 不過t1rmi因為有較小的period, 所以優先權較低, 也因此可以看到miss rate較t1rm高很多
+
+在確保需要在特定period的時間內執行及指定priority的情況下, 比較RM的作法比RMI的作法, 可以看出RM的priority指定較為有效, 因為在RM中, priority最高的task的miss rate比priority最低的task的miss rate低很多, 而在RMI中, priority最高的task的miss rate與另一個priority最低的task的miss rate差不多, 所以我認為RM能確保priority高的task的即時性.
