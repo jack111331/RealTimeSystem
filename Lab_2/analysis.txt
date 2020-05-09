@@ -1,0 +1,7 @@
+Question #1
+在Task的workload很大時，則設計的實驗會變得沒有意義
+因為若某些Task的Workload大到在CPU frequency低的時候他的execution time會變得很大，高的時候他的execution time會變得很小，則CPU frequency在執行時不定則會導致Task的Execution time的Variance很大，進而大幅影響實驗結果
+
+Question #2
+會使用到stream的原因是如果使用普通的simple RPC，則在傳輸即時資料的時候會因為每次資料傳輸他都需要某一方Request、另一方Response，無形中增加資料傳輸時的Overhead
+但若使用stream，因為是一次Request，多次Response，因此可以省去這方面的overhead
