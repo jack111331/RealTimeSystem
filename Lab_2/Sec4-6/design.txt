@@ -1,0 +1,1 @@
+在Subscriber subscribe後，進入Critical Section，並利用Condition Variable等待Publisher的Signal。當Publisher signal Condition Variable後就執行ServerWriter object的Write把Topic Data傳給Subscriber。 

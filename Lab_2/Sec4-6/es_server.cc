@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <cmath>
+#include <pthread.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -46,6 +47,27 @@ using es::EventService;
 using es::TopicData;
 using es::NoUse;
 
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+std::string currentSubscribing;
+std::map<std::string, TopicData> topicDataMap;
+std::map<std::string, bool> isReceivedMap;
+
+void *threadingFunc(void *writerParam) {
+  ServerWriter<TopicData> *writer = (ServerWriter<TopicData> *)writerParam;
+  while(true) {
+    pthread_mutex_lock(&mutex);
+    while(!isReceivedMap[currentSubscribing]) {
+      pthread_cond_wait(&cond, &mutex);
+    }
+    writer->Write(topicDataMap[currentSubscribing]);
+    isReceivedMap[currentSubscribing] = false;
+    pthread_mutex_unlock(&mutex);
+  }
+  return NULL;
+}
+
 // Logic and data behind the server's behavior.
 class EventServiceImpl final : public EventService::Service {
 
@@ -55,18 +77,24 @@ class EventServiceImpl final : public EventService::Service {
                    ServerWriter<TopicData>* writer) override {
     //TODO
     if(request->topic() == "H" || request->topic() == "M" || request->topic() == "L") {
-      if(m_isReceived.find(request->topic()) == m_isReceived.end()) {
-        m_isReceived[request->topic()] = false;
+      if(isReceivedMap.find(request->topic()) == isReceivedMap.end()) {
+        isReceivedMap[request->topic()] = false;
       }
+    } else {
+      std::cout << "[ERROR] Topic " << request->topic() << " not in supported topic list." << std::endl;
+      return Status::OK;
     }
-    while(1) {
-      if(request->topic() == "H" || request->topic() == "M" || request->topic() == "L") {
-        if(m_isReceived[request->topic()]) {
-          writer->Write(m_td[request->topic()]);
-          m_isReceived[request->topic()] = false;
-        }
-      }
+    currentSubscribing = request->topic();
+    pthread_t thread;
+    if(pthread_create(&thread, NULL, threadingFunc, writer)) {
+      std::cout << "[ERROR] pthread creation failed" << std::endl;
+      return Status::CANCELLED;
     }
+    if(pthread_join(thread, NULL)) {
+      std::cout << "[ERROR] pthread join failed" << std::endl;
+      return Status::CANCELLED;
+    }
+
     return Status::OK;
   }
 
@@ -78,18 +106,17 @@ class EventServiceImpl final : public EventService::Service {
     while(reader->Read(&td)) {
       std::cout << "received {" << td.topic() << ": " << td.data() << "}" << std::endl;
       if(td.topic() == "H" || td.topic() == "M" || td.topic() == "L") {
-        m_td[td.topic()] = td;
-        m_isReceived[td.topic()] = true;
+        pthread_mutex_lock(&mutex);
+        isReceivedMap[td.topic()] = true;
+        pthread_cond_signal(&cond);
+        topicDataMap[td.topic()] = td;
+        pthread_mutex_unlock(&mutex);
       } else {
         std::cout << "[ERROR] Topic " << td.topic() << " not in supported topic list." << std::endl;
       }
     }
     return Status::OK;
   }
-  //TODO
-private:
-  std::map<std::string, TopicData> m_td;
-  std::map<std::string, bool> m_isReceived;
 };
 
 void RunServer() {
