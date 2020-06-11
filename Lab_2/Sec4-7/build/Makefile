@@ -131,19 +131,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named es_server
-
-# Build rule for target.
-es_server: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 es_server
-.PHONY : es_server
-
-# fast build rule for target.
-es_server/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/build
-.PHONY : es_server/fast
-
-#=============================================================================
 # Target rules for targets named es_sub
 
 # Build rule for target.
@@ -169,15 +156,28 @@ es_pub/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_pub.dir/build.make CMakeFiles/es_pub.dir/build
 .PHONY : es_pub/fast
 
+#=============================================================================
+# Target rules for targets named es_server
+
+# Build rule for target.
+es_server: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 es_server
+.PHONY : es_server
+
+# fast build rule for target.
+es_server/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/build
+.PHONY : es_server/fast
+
 es.grpc.pb.o: es.grpc.pb.cc.o
 
 .PHONY : es.grpc.pb.o
 
 # target to build an object file
 es.grpc.pb.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.grpc.pb.cc.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_sub.dir/build.make CMakeFiles/es_sub.dir/es.grpc.pb.cc.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_pub.dir/build.make CMakeFiles/es_pub.dir/es.grpc.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.grpc.pb.cc.o
 .PHONY : es.grpc.pb.cc.o
 
 es.grpc.pb.i: es.grpc.pb.cc.i
@@ -186,9 +186,9 @@ es.grpc.pb.i: es.grpc.pb.cc.i
 
 # target to preprocess a source file
 es.grpc.pb.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.grpc.pb.cc.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_sub.dir/build.make CMakeFiles/es_sub.dir/es.grpc.pb.cc.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_pub.dir/build.make CMakeFiles/es_pub.dir/es.grpc.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.grpc.pb.cc.i
 .PHONY : es.grpc.pb.cc.i
 
 es.grpc.pb.s: es.grpc.pb.cc.s
@@ -197,9 +197,9 @@ es.grpc.pb.s: es.grpc.pb.cc.s
 
 # target to generate assembly for a file
 es.grpc.pb.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.grpc.pb.cc.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_sub.dir/build.make CMakeFiles/es_sub.dir/es.grpc.pb.cc.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_pub.dir/build.make CMakeFiles/es_pub.dir/es.grpc.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.grpc.pb.cc.s
 .PHONY : es.grpc.pb.cc.s
 
 es.pb.o: es.pb.cc.o
@@ -208,9 +208,9 @@ es.pb.o: es.pb.cc.o
 
 # target to build an object file
 es.pb.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.pb.cc.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_sub.dir/build.make CMakeFiles/es_sub.dir/es.pb.cc.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_pub.dir/build.make CMakeFiles/es_pub.dir/es.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.pb.cc.o
 .PHONY : es.pb.cc.o
 
 es.pb.i: es.pb.cc.i
@@ -219,9 +219,9 @@ es.pb.i: es.pb.cc.i
 
 # target to preprocess a source file
 es.pb.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.pb.cc.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_sub.dir/build.make CMakeFiles/es_sub.dir/es.pb.cc.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_pub.dir/build.make CMakeFiles/es_pub.dir/es.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.pb.cc.i
 .PHONY : es.pb.cc.i
 
 es.pb.s: es.pb.cc.s
@@ -230,9 +230,9 @@ es.pb.s: es.pb.cc.s
 
 # target to generate assembly for a file
 es.pb.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.pb.cc.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_sub.dir/build.make CMakeFiles/es_sub.dir/es.pb.cc.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_pub.dir/build.make CMakeFiles/es_pub.dir/es.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/es_server.dir/build.make CMakeFiles/es_server.dir/es.pb.cc.s
 .PHONY : es.pb.cc.s
 
 es_pub.o: es_pub.cc.o

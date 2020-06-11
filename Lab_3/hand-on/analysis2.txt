@@ -1,0 +1,6 @@
+Pros
+若把Handling Message與Task Scheduling這兩個Task分開來做，則若同一時間有很多Message Arrived時，因為可以把不同的Message分派到不同的Thread去處理，所以當處理某些Message需要的時間特別多的時候，其他Thread不會受影響
+
+Cons
+因為把Handling Message與Task Scheduling分開來做，因此在Handling Message thread傳遞訊息給Task Scheduling Thread必定會增加一些Communication Overhead，而且因為要排定Message處理的先後次序，必然要維護一個資料結構，
+讓他可以執行Atomic operation，並把需要先處理的Message Pop出來，因此會增加一些編程複雜度 
