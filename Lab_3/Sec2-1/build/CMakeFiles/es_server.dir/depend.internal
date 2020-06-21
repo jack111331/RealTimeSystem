@@ -205,6 +205,7 @@ CMakeFiles/es_server.dir/es_server.cc.o
  /include/google/protobuf/descriptor.h
  /include/google/protobuf/descriptor.pb.h
  /include/google/protobuf/descriptor_database.h
+ /include/google/protobuf/duration.pb.h
  /include/google/protobuf/extension_set.h
  /include/google/protobuf/generated_enum_reflection.h
  /include/google/protobuf/generated_enum_util.h
@@ -251,6 +252,7 @@ CMakeFiles/es_server.dir/es_server.cc.o
  /include/google/protobuf/type.pb.h
  /include/google/protobuf/unknown_field_set.h
  /include/google/protobuf/util/json_util.h
+ /include/google/protobuf/util/time_util.h
  /include/google/protobuf/util/type_resolver.h
  /include/google/protobuf/wire_format_lite.h
  /include/grpc/byte_buffer.h

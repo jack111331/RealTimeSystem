@@ -29,11 +29,13 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <google/protobuf/util/time_util.h>
 
 #include "es.grpc.pb.h"
 
 #include <unistd.h>
 #include <sched.h>
+#include <sys/time.h>
 #include <cmath>
 
 #include "json.hpp"
@@ -45,6 +47,9 @@ using grpc::Status;
 using grpc::ServerWriter;
 using grpc::ServerReader;
 
+using google::protobuf::Timestamp;
+using google::protobuf::Duration;
+
 using es::TopicRequest;
 using es::EventService;
 using es::TopicData;
@@ -52,18 +57,14 @@ using es::NoUse;
 
 using nlohmann::json;
 
-pthread_mutex_t mutexHigh;
-pthread_mutex_t mutexMid;
-pthread_mutex_t mutexLow;
-pthread_cond_t cvHigh;
-pthread_cond_t cvMid;
-pthread_cond_t cvLow;
-ServerWriter<TopicData>* writerHigh = NULL;
-ServerWriter<TopicData>* writerMid = NULL;
-ServerWriter<TopicData>* writerLow = NULL;
-TopicData tdHigh, tdMid, tdLow;
+pthread_mutex_t mutexTemp;
+pthread_cond_t cvTemp;
+ServerWriter<TopicData>* writerTemp = NULL;
+TopicData tdTemp;
 
 pthread_mutex_t mutexPq;
+
+const long long int brokerToSubscriberEstimateTime = 5;
 
 static std::string configFile;
 
@@ -79,7 +80,7 @@ int arriveTimeCount;
 struct MessageMeta {
   int arriveTime;
   int period;
-  int deadline;
+  long long int deadline;
   TopicData msg;
 };
 
@@ -138,6 +139,7 @@ public:
     } else if(m_schedulingStrategy == Strategy::STRATEGY_RM) {
       return m_rm(lhs, rhs);
     } else {
+      std::cerr << "No valid Strategy" << std::endl;
       exit(1);
     }
   }
@@ -153,23 +155,21 @@ bool atomicHasData() {
   return size > 0;
 }
 
-void atomicPush(const TopicData &topicData) {
+void atomicPush(const TopicData &topicData, long long int pushToPrioriQueueTimeDifference) {
   pthread_mutex_lock(&mutexPq);
   MessageMeta msgMeta;
   msgMeta.msg = topicData;
   msgMeta.arriveTime = arriveTimeCount++;
   Config config = configMap[msgMeta.msg.topic()];
   msgMeta.period = config.period;
-  msgMeta.deadline = config.deadline;
+  msgMeta.deadline = config.deadline - pushToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime;
 
+  pthread_mutex_lock(&mutexTemp);
   pq->push(msgMeta);
-  if(topicData.topic() == "High") {
-    pthread_cond_broadcast(&cvHigh);
-  } else if(topicData.topic() == "Middle") {
-    pthread_cond_broadcast(&cvMid);
-  } else if(topicData.topic() == "Low") {
-    pthread_cond_broadcast(&cvLow);
-  }
+  pthread_cond_broadcast(&cvTemp);
+  pthread_mutex_unlock(&mutexTemp);
+  std::cout << "Broadcasted" << std::endl;
+
   pthread_mutex_unlock(&mutexPq);
 }
 
@@ -200,95 +200,24 @@ void pinCPU (int cpu_number)
     }
 }
 
-void setSchedulingPolicy (int newPolicy, int priority)
-{
-    sched_param sched;
-    int oldPolicy;
-    if (pthread_getschedparam(pthread_self(), &oldPolicy, &sched)) {
-        perror("pthread_setschedparam");
-        exit(EXIT_FAILURE);
-    }
-    sched.sched_priority = priority;
-    if (pthread_setschedparam(pthread_self(), newPolicy, &sched)) {
-        perror("pthread_setschedparam");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void workload_1ms ()
-{
-    double c = 10.1;
-    int repeat = 70000;
-    for (int i = 1; i <= repeat; i++)
-    {
-        c = sqrt(i*i*c);
-    }
-}
-
-void* highPriorityTask (void *id) {
-  std::cout << "Starting the high-priority task...\n";
-  setSchedulingPolicy(SCHED_FIFO, 99);
+void* priorityTask (void *param) {
+  std::cout << "Starting the task...\n";
   while (1) {
-    pthread_mutex_lock(&mutexHigh);
-    while (!atomicHasData() || ((tdHigh = atomicTop()).topic() != "High")) {
-      pthread_cond_wait(&cvHigh, &mutexHigh);
+    pthread_mutex_lock(&mutexTemp);
+    while (!atomicHasData()) {
+      int result = pthread_cond_wait(&cvTemp, &mutexTemp);
+      std::cout << (result == EINVAL) << std::endl;
     }
+    tdTemp = atomicTop();
     atomicPop();
-    if (writerHigh != NULL) {
-      workload_1ms ();
-      std::cout << "{" << tdHigh.topic() << ": " << tdHigh.data() << "}" << std::endl;
-      writerHigh->Write(tdHigh);
+    if (writerTemp != NULL) {
+      std::cout << "{" << tdTemp.topic() << ": " << tdTemp.data() << "}" << std::endl;
+      writerTemp->Write(tdTemp);
     }
     else {
       std::cout << "no subscriber; discard the data\n";
     }
-    pthread_mutex_unlock(&mutexHigh);
-  }
-}
-
-void* midPriorityTask (void *id) {
-  std::cout << "Starting the middle-priority task...\n";
-  setSchedulingPolicy(SCHED_FIFO, 98);
-  while (1) {
-    pthread_mutex_lock(&mutexMid);
-    while (!atomicHasData() || ((tdMid = atomicTop()).topic() != "Middle")) {
-      pthread_cond_wait(&cvMid, &mutexMid);
-    }
-    atomicPop();
-    if (writerMid != NULL) {
-      for (int i = 0; i < 10; i++) {
-        workload_1ms ();
-      }
-      std::cout << "{" << tdMid.topic() << ": " << tdMid.data() << "}" << std::endl;
-      writerMid->Write(tdMid);
-    }
-    else {
-      std::cout << "no subscriber; discard the data\n";
-    }
-    pthread_mutex_unlock(&mutexMid);
-  }
-}
-
-void* lowPriorityTask (void *id) {
-  std::cout << "Starting the low-priority task...\n";
-  setSchedulingPolicy(SCHED_FIFO, 97);
-  while (1) {
-    pthread_mutex_lock(&mutexLow);
-    while (!atomicHasData() || ((tdLow = atomicTop()).topic() != "Low")) {
-      pthread_cond_wait(&cvLow, &mutexLow);
-    }
-    atomicPop();
-    if (writerLow != NULL) {
-      for (int i = 0; i < 50; i++) {
-        workload_1ms ();
-      }
-      std::cout << "{" << tdLow.topic() << ": " << tdLow.data() << "}" << std::endl;
-      writerLow->Write(tdLow);
-    }
-    else {
-      std::cout << "no subscriber; discard the data\n";
-    }
-    pthread_mutex_unlock(&mutexLow);
+    pthread_mutex_unlock(&mutexTemp);
   }
 }
 
@@ -299,19 +228,10 @@ class EventServiceImpl final : public EventService::Service {
  public:
   EventServiceImpl() {
     pinCPU(0);
-    pthread_create (&edgeComputing_threads[0], NULL,
-                     highPriorityTask, (void *) &idp[0]);
-    pthread_create (&edgeComputing_threads[1], NULL,
-                     midPriorityTask, (void *) &idp[1]);
-    pthread_create (&edgeComputing_threads[2], NULL,
-                     lowPriorityTask, (void *) &idp[2]);
+    pthread_create (&edgeComputing_threads, NULL, priorityTask, NULL);
     pinCPU(1);
-    mutexHigh = PTHREAD_MUTEX_INITIALIZER;
-    mutexMid = PTHREAD_MUTEX_INITIALIZER;
-    mutexLow = PTHREAD_MUTEX_INITIALIZER;
-    cvHigh = PTHREAD_COND_INITIALIZER;
-    cvMid = PTHREAD_COND_INITIALIZER;
-    cvLow = PTHREAD_COND_INITIALIZER;
+    mutexTemp = PTHREAD_MUTEX_INITIALIZER;
+    cvTemp = PTHREAD_COND_INITIALIZER;
 
     mutexPq = PTHREAD_MUTEX_INITIALIZER;
   }
@@ -319,10 +239,7 @@ class EventServiceImpl final : public EventService::Service {
   Status Subscribe(ServerContext* context,
                    const TopicRequest* request,
                    ServerWriter<TopicData>* writer) override {
-  //TODO: use request to determine topic subscription
-    writerHigh = writer;
-    writerMid = writer;
-    writerLow = writer;
+    writerTemp = writer;
     sleep(3600); // preserve the validity of the writer pointer
     return Status::OK;
   }
@@ -335,7 +252,14 @@ class EventServiceImpl final : public EventService::Service {
       if (td.topic() != "High" && td.topic() != "Middle" && td.topic() != "Low") {
         std::cerr << "Publish: got an unidentified topic!\n";
       } else {
-        atomicPush(td);
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        Timestamp sentTopicTime = *td.mutable_timestamp();
+        Timestamp pushToPrioriQueueTime = Timestamp();
+        // *td.mutable_timestamp() = google::protobuf::util::TimeUtil::GetCurrentTime();
+        pushToPrioriQueueTime.set_seconds(tv.tv_sec);
+        pushToPrioriQueueTime.set_nanos(tv.tv_usec * 1000);
+        atomicPush(td, google::protobuf::util::TimeUtil::DurationToMilliseconds(pushToPrioriQueueTime-sentTopicTime));
       }
     }
     return Status::OK;
@@ -343,8 +267,7 @@ class EventServiceImpl final : public EventService::Service {
 
  private:
   ServerWriter<TopicData>* writer_ = NULL;
-  pthread_t edgeComputing_threads[3];
-  const int idp[3] = {0, 1, 2}; // id of each pthread
+  pthread_t edgeComputing_threads;
 };
 
 void RunServer() {
