@@ -57,14 +57,12 @@ using es::NoUse;
 
 using nlohmann::json;
 
-pthread_mutex_t mutexTemp;
-pthread_cond_t cvTemp;
 ServerWriter<TopicData>* writerTemp = NULL;
 TopicData tdTemp;
 
 pthread_mutex_t mutexPq;
 
-const long long int brokerToSubscriberEstimateTime = 5;
+const long long int brokerToSubscriberEstimateTime = 5000; // us
 
 static std::string configFile;
 
@@ -163,12 +161,11 @@ void atomicPush(const TopicData &topicData, long long int pushToPrioriQueueTimeD
   Config config = configMap[msgMeta.msg.topic()];
   msgMeta.period = config.period;
   msgMeta.deadline = config.deadline - pushToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime;
+  std::cout << "Config deadline: " << config.deadline << std::endl;
+  std::cout << "Publisher to priority queue delta time: " << pushToPrioriQueueTimeDifference << std::endl;
+  std::cout << "Calculated deadline: " << msgMeta.deadline << std::endl;
 
-  pthread_mutex_lock(&mutexTemp);
   pq->push(msgMeta);
-  pthread_cond_broadcast(&cvTemp);
-  pthread_mutex_unlock(&mutexTemp);
-  std::cout << "Broadcasted" << std::endl;
 
   pthread_mutex_unlock(&mutexPq);
 }
@@ -203,11 +200,7 @@ void pinCPU (int cpu_number)
 void* priorityTask (void *param) {
   std::cout << "Starting the task...\n";
   while (1) {
-    pthread_mutex_lock(&mutexTemp);
-    while (!atomicHasData()) {
-      int result = pthread_cond_wait(&cvTemp, &mutexTemp);
-      std::cout << (result == EINVAL) << std::endl;
-    }
+    while (!atomicHasData());
     tdTemp = atomicTop();
     atomicPop();
     if (writerTemp != NULL) {
@@ -217,7 +210,6 @@ void* priorityTask (void *param) {
     else {
       std::cout << "no subscriber; discard the data\n";
     }
-    pthread_mutex_unlock(&mutexTemp);
   }
 }
 
@@ -230,8 +222,6 @@ class EventServiceImpl final : public EventService::Service {
     pinCPU(0);
     pthread_create (&edgeComputing_threads, NULL, priorityTask, NULL);
     pinCPU(1);
-    mutexTemp = PTHREAD_MUTEX_INITIALIZER;
-    cvTemp = PTHREAD_COND_INITIALIZER;
 
     mutexPq = PTHREAD_MUTEX_INITIALIZER;
   }
@@ -259,7 +249,7 @@ class EventServiceImpl final : public EventService::Service {
         // *td.mutable_timestamp() = google::protobuf::util::TimeUtil::GetCurrentTime();
         pushToPrioriQueueTime.set_seconds(tv.tv_sec);
         pushToPrioriQueueTime.set_nanos(tv.tv_usec * 1000);
-        atomicPush(td, google::protobuf::util::TimeUtil::DurationToMilliseconds(pushToPrioriQueueTime-sentTopicTime));
+        atomicPush(td, google::protobuf::util::TimeUtil::DurationToMicroseconds(pushToPrioriQueueTime-sentTopicTime));
       }
     }
     return Status::OK;
@@ -312,7 +302,7 @@ void parseConfig(const std::string &configFilename) {
       topicJson["Period"],
       topicJson["Deadline"]
     };
-    std::cout << topicJson["Name"] << " " << topicConfig.period << " " << topicConfig.deadline << std::endl;
+    std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
     configMap[topicJson["Name"]] = topicConfig;
   }
 }
