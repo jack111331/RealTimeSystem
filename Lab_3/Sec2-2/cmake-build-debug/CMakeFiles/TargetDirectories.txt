@@ -1,0 +1,5 @@
+/home/edge/Code/RealTimeSystem/Lab_3/Sec2-2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/edge/Code/RealTimeSystem/Lab_3/Sec2-2/cmake-build-debug/CMakeFiles/es_sub.dir
+/home/edge/Code/RealTimeSystem/Lab_3/Sec2-2/cmake-build-debug/CMakeFiles/es_server.dir
+/home/edge/Code/RealTimeSystem/Lab_3/Sec2-2/cmake-build-debug/CMakeFiles/es_pub.dir
+/home/edge/Code/RealTimeSystem/Lab_3/Sec2-2/cmake-build-debug/CMakeFiles/edit_cache.dir

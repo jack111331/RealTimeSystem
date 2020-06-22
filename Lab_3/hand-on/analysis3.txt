@@ -1,0 +1,61 @@
+根據過往的經驗，RM, EDF, FIFO這三種Scheduling Policy會在不同Workload下會有不同的Performance，也會在有不同的Task Sets時表現出不同的Performance。
+因此我打算設計一個實驗，情境為在不同Task Sets情況下，變動Workload對於這三種Scheduling Policy的Performance測量。
+
+在固定的一種Task Sets，變動Workload的情境下，我會分別使用
+2000, 4000, 6000, 8000, 10000
+上述這些Workload，來觀察CPU使用率。
+並將得到的結果畫出X軸為Workload，Y軸為CPU使用率的折線圖。
+
+將上述固定Task Sets分別套用不同的Task Sets，並變動Workload的情境下，我會分別使用
+{
+	"TaskSets": [
+		{
+			"High": {
+				"Period(ms)": 5,
+				"Deadline(us)": 1000
+			},
+			"Middle": {
+				"Period(ms)": 15,
+				"Deadline(us)": 10000
+			},
+			"Low": {
+				"Period(ms)": 50,
+				"Deadline(us)": 20000
+			}
+		},
+		{
+			"High": {
+				"Period(ms)": 3,
+				"Deadline(us)": 5000
+			},
+			"Middle": {
+				"Period(ms)": 10,
+				"Deadline(us)": 8000
+			},
+			"Low": {
+				"Period(ms)": 20,
+				"Deadline(us)": 20000
+			}
+		},
+		{
+			"High": {
+				"Period(ms)": 4,
+				"Deadline(us)": 3000
+			},
+			"Middle": {
+				"Period(ms)": 12,
+				"Deadline(us)": 5000
+			},
+			"Low": {
+				"Period(ms)": 25,
+				"Deadline(us)": 10000
+			}
+		},
+	]
+}
+上述這些Task Sets，並套用
+2000, 4000, 6000, 8000, 10000
+上述這些Workload來觀察CPU使用率。
+並將得到的結果對於每個Task Sets畫出X軸為Workload，Y軸為CPU使用率的折線圖。
+這樣就可以畫出三張，每張針對不同Task Sets在不同Workload情況下，CPU使用率的折線圖。
+如果要更進一步分析Miss Rate在這三種不同的Scheduling Policy下的數值表現，也可以在上述的實驗中多測量Miss Rate，並在畫折線圖時把Y軸替換為Miss Rate。 

@@ -21,6 +21,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <fstream>
 
 #include <grpcpp/grpcpp.h>
 
@@ -28,6 +29,8 @@
 #include <sys/time.h>
 
 #include <google/protobuf/util/time_util.h>
+
+#include "json.hpp"
 
 
 using grpc::Channel;
@@ -41,6 +44,16 @@ using es::TopicData;
 using es::NoUse;
 
 using google::protobuf::Timestamp;
+
+using nlohmann::json;
+
+struct Config {
+    int period;
+    int deadline;
+    int amount;
+};
+
+static std::map<std::string, Config> configMap;
 
 class Publisher {
  public:
@@ -84,6 +97,34 @@ class Publisher {
   NoUse nouse_;
   std::unique_ptr<ClientWriter<TopicData> > writer_;
 };
+
+
+void parseConfig(const std::string &configFilename) {
+    std::ifstream ifs(configFilename);
+    json configJson;
+    ifs >> configJson;
+    /*
+    {
+      "Topic": [
+        {
+          "Name":
+          "Period":
+          "Deadline":
+        }
+      ]
+    }
+    */
+    std::vector<json> topicListJson = configJson["Topic"];
+    for(auto topicJson: topicListJson) {
+        Config topicConfig = {
+                topicJson["Period"],
+                topicJson["Deadline"],
+                topicJson["Amount"]
+        };
+        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << ", Amount: " << topicConfig.amount << std::endl;
+        configMap[topicJson["Name"]] = topicConfig;
+    }
+}
 
 int main(int argc, char** argv) {
   if (argc != 5) {

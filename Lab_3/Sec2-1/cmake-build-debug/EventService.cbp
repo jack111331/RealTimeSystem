@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="EventService"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\usr\;CMake Files\..\..\..\..\..\..\usr\lib64\;CMake Files\..\..\..\..\..\..\usr\lib64\cmake\;CMake Files\..\..\..\..\..\..\usr\lib64\cmake\protobuf\;CMake Files\..\..\..\..\..\..\usr\lib64\cmake\grpc\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="es_sub">
+				<Option output="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es_sub" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DCARES_STATICLIB"/>
+					<Add option="-D__CLANG_SUPPORT_DYN_ANNOTATION__"/>
+					<Add directory="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+					<Add directory="/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/x86_64-pc-linux-gnu"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include-fixed"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 es_sub"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="es_sub/fast">
+				<Option output="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es_sub" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DCARES_STATICLIB"/>
+					<Add option="-D__CLANG_SUPPORT_DYN_ANNOTATION__"/>
+					<Add directory="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+					<Add directory="/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/x86_64-pc-linux-gnu"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include-fixed"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 es_sub/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="es_server">
+				<Option output="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es_server" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DCARES_STATICLIB"/>
+					<Add option="-D__CLANG_SUPPORT_DYN_ANNOTATION__"/>
+					<Add directory="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+					<Add directory="/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/x86_64-pc-linux-gnu"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include-fixed"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 es_server"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="es_server/fast">
+				<Option output="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es_server" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DCARES_STATICLIB"/>
+					<Add option="-D__CLANG_SUPPORT_DYN_ANNOTATION__"/>
+					<Add directory="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+					<Add directory="/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/x86_64-pc-linux-gnu"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include-fixed"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 es_server/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="es_pub">
+				<Option output="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es_pub" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DCARES_STATICLIB"/>
+					<Add option="-D__CLANG_SUPPORT_DYN_ANNOTATION__"/>
+					<Add directory="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+					<Add directory="/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/x86_64-pc-linux-gnu"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include-fixed"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 es_pub"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="es_pub/fast">
+				<Option output="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es_pub" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DCARES_STATICLIB"/>
+					<Add option="-D__CLANG_SUPPORT_DYN_ANNOTATION__"/>
+					<Add directory="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+					<Add directory="/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/x86_64-pc-linux-gnu"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/../../../../include/c++/10.1.0/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-pc-linux-gnu/10.1.0/include-fixed"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 es_pub/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es.grpc.pb.cc">
+			<Option target="es_sub"/>
+			<Option target="es_server"/>
+			<Option target="es_pub"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es.pb.cc">
+			<Option target="es_sub"/>
+			<Option target="es_server"/>
+			<Option target="es_pub"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/cmake-build-debug/es.pb.cc.rule">
+			<Option target="es_sub"/>
+			<Option target="es_server"/>
+			<Option target="es_pub"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/es_pub.cc">
+			<Option target="es_pub"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/es_server.cc">
+			<Option target="es_server"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/es_sub.cc">
+			<Option target="es_sub"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/protobuf/protobuf-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\protobuf\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/protobuf/protobuf-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\protobuf\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/protobuf/protobuf-options.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\protobuf\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/protobuf/protobuf-targets-noconfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\protobuf\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/protobuf/protobuf-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\protobuf\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/grpc/gRPCConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\grpc\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/grpc/gRPCConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\grpc\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/grpc/gRPCTargets-noconfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\grpc\"/>
+		</Unit>
+		<Unit filename="/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/../../../../../../usr/lib64/cmake/grpc/gRPCTargets.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\usr\lib64\cmake\grpc\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

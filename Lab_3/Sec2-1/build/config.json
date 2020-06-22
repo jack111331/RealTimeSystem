@@ -3,17 +3,20 @@
     {
       "Name": "High",
       "Period": 10,
-      "Deadline": 20000
+      "Deadline": 20000,
+      "Amount": 10
     },
     {
       "Name": "Middle",
       "Period": 50,
-      "Deadline": 30000
+      "Deadline": 30000,
+      "Amount": 20
     },
     {
       "Name": "Low",
       "Period": 40,
-      "Deadline": 20000
+      "Deadline": 20000,
+      "Amount": 30
     }
   ]
 }

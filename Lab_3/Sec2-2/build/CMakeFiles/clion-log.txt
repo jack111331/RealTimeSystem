@@ -1,0 +1,4 @@
+Cannot generate into /home/edge/Code/RealTimeSystem/Lab_3/Sec2-2/build
+It is already used for project /home/edge/Code/RealTimeSystem/Lab_3/Sec2-1
+
+Please either delete it manually or select another generation directory

@@ -1,0 +1,60 @@
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_109b7/fast && /usr/bin/make  -f CMakeFiles/cmTC_109b7.dir/build.make CMakeFiles/cmTC_109b7.dir/build
+make[1]: 進入目錄「/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/build/CMakeFiles/CMakeTmp」
+Building C object CMakeFiles/cmTC_109b7.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_109b7.dir/src.c.o   -c /home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_109b7
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_109b7.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    CMakeFiles/cmTC_109b7.dir/src.c.o  -o cmTC_109b7 
+/usr/bin/ld: CMakeFiles/cmTC_109b7.dir/src.c.o: in function `main':
+src.c:(.text+0x3e): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x4a): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x56): undefined reference to `pthread_cancel'
+/usr/bin/ld: src.c:(.text+0x67): undefined reference to `pthread_join'
+collect2: 錯誤：ld 回傳 1
+make[1]: *** [CMakeFiles/cmTC_109b7.dir/build.make:107：cmTC_109b7] 錯誤 1
+make[1]: 離開目錄「/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/build/CMakeFiles/CMakeTmp」
+make: *** [Makefile:141：cmTC_109b7/fast] 錯誤 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_b40a4/fast && /usr/bin/make  -f CMakeFiles/cmTC_b40a4.dir/build.make CMakeFiles/cmTC_b40a4.dir/build
+make[1]: 進入目錄「/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/build/CMakeFiles/CMakeTmp」
+Building C object CMakeFiles/cmTC_b40a4.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_b40a4.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.17/Modules/CheckFunctionExists.c
+Linking C executable cmTC_b40a4
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b40a4.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_b40a4.dir/CheckFunctionExists.c.o  -o cmTC_b40a4  -lpthreads 
+/usr/bin/ld: 找不到 -lpthreads
+collect2: 錯誤：ld 回傳 1
+make[1]: *** [CMakeFiles/cmTC_b40a4.dir/build.make:107：cmTC_b40a4] 錯誤 1
+make[1]: 離開目錄「/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/build/CMakeFiles/CMakeTmp」
+make: *** [Makefile:141：cmTC_b40a4/fast] 錯誤 2
+
+
+
