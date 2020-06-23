@@ -1,22 +1,22 @@
  {
   "Topic": [
     {
-      "Name": "High",
+      "Name": "Topic_1",
       "Period": 40,
       "Deadline": 20000,
-      "Amount": 3
+      "SameRateTopicAmount": 3
     },
     {
-      "Name": "Middle",
+      "Name": "Topic_2",
       "Period": 50,
       "Deadline": 60000,
-      "Amount": 20
+      "SameRateTopicAmount": 20
     },
     {
-      "Name": "Low",
+      "Name": "Topic_3",
       "Period": 80,
       "Deadline": 80000,
-      "Amount": 5
+      "SameRateTopicAmount": 5
     }
   ]
 }

@@ -22,13 +22,15 @@
 #include <memory>
 #include <string>
 #include <fstream>
+#include <vector>
 
 #include <grpcpp/grpcpp.h>
+#include <google/protobuf/util/time_util.h>
 
 #include "es.grpc.pb.h"
-#include <sys/time.h>
 
-#include <google/protobuf/util/time_util.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include "json.hpp"
 
@@ -48,16 +50,14 @@ using google::protobuf::Timestamp;
 using nlohmann::json;
 
 struct Config {
+    char name[50];
     int period;
     int deadline;
-    int amount;
+    std::vector<Timestamp> sameRateLatestTopicArrivalList;
 };
 
 static std::map<std::string, Config> configMap;
-int eachRateAmount[3];
-int totalTopicAmount;
-std::string topicName[3] = {"High", "Middle", "Low"};
-TopicData latestPublishedTopicData[3];
+std::vector<pthread_t> publisherThreadList;
 
 class Publisher {
  public:
@@ -116,6 +116,39 @@ void pinCPU (int cpu_number)
     }
 }
 
+void* publisherTask(void *param) {
+    std::cout << "Starting the task...\n";
+    std::string target_str;
+    target_str = "localhost:50051";
+    Publisher pub(1, grpc::CreateChannel(
+            target_str, grpc::InsecureChannelCredentials()));
+    std::cout << "Start to send data to our server..\n";
+    std::string topicName = (const char *)param;
+    while(1) {
+        for(int i = 0;i < configMap[topicName].sameRateLatestTopicArrivalList.size();++i) {
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            Timestamp currentTp;
+            currentTp.set_seconds(tv.tv_sec);
+            currentTp.set_nanos(tv.tv_usec * 1000);
+
+            if(google::protobuf::util::TimeUtil::DurationToMicroseconds(currentTp - configMap[topicName].sameRateLatestTopicArrivalList[i]) > configMap[topicName].period) {
+                TopicData td;
+                td.set_topic(topicName);
+                td.set_data("Hello World");
+                gettimeofday(&tv, NULL);
+                Timestamp *tp = td.mutable_timestamp();
+                // *td.mutable_timestamp() = google::protobuf::util::TimeUtil::GetCurrentTime();
+                tp->set_seconds(tv.tv_sec);
+                tp->set_nanos(tv.tv_usec * 1000);
+                configMap[topicName].sameRateLatestTopicArrivalList[i] = *tp;
+                pub.Publish(td);
+            }
+        }
+    }
+    pub.done();
+}
+
 void parseConfig(const std::string &configFilename) {
     std::ifstream ifs(configFilename);
     json configJson;
@@ -127,7 +160,7 @@ void parseConfig(const std::string &configFilename) {
           "Name":
           "Period":
           "Deadline":
-          "Amount":
+          "SameRateTopicAmount":
         }
       ]
     }
@@ -135,69 +168,34 @@ void parseConfig(const std::string &configFilename) {
     std::vector<json> topicListJson = configJson["Topic"];
     for(auto topicJson: topicListJson) {
         Config topicConfig = {
+                "",
                 topicJson["Period"],
-                topicJson["Deadline"],
-                topicJson["Amount"]
+                topicJson["Deadline"]
         };
-        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << ", Amount: " << topicConfig.amount << std::endl;
         configMap[topicJson["Name"]] = topicConfig;
-        if(topicJson["Name"] == "High") {
-            eachRateAmount[0] = topicConfig.amount;
-            totalTopicAmount += topicConfig.amount;
-        } else if(topicJson["Name"] == "Low") {
-            eachRateAmount[2] = topicConfig.amount;
-            totalTopicAmount += topicConfig.amount;
+        strncpy(configMap[topicJson["Name"]].name, topicJson["Name"].get<std::string>().c_str(), topicJson["Name"].get<std::string>().size());
+        int sameRateTopicAmount = topicJson["SameRateTopicAmount"];
+        for(int i = 0;i < sameRateTopicAmount;++i) {
+            topicConfig.sameRateLatestTopicArrivalList.push_back(Timestamp());
         }
+        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << ", Amount: " << sameRateTopicAmount << std::endl;
+    }
+    for(auto config: configMap) {
+        pthread_t newThread;
+        pthread_create(&newThread, NULL, publisherTask, config.second.name);
+        publisherThreadList.push_back(newThread);
     }
 }
 
 int main(int argc, char** argv) {
   pinCPU(2);
-  if (argc != 5) {
-    std::cout << "Usage: " << argv[0] << " -l load -c config.json\n";
+  if (argc != 3) {
+    std::cout << "Usage: " << argv[0] << "-c config_file\n";
     exit(0);
   }
-  std::string target_str;
-  target_str = "localhost:50051";
-  Publisher pub(1, grpc::CreateChannel(
-      target_str, grpc::InsecureChannelCredentials()));
-  std::cout << "Start to send data to our server..\n";
-  parseConfig(argv[4]);
-  eachRateAmount[1] = atoi(argv[2]);
-  totalTopicAmount += eachRateAmount[1];
-  for(int i = 0;i < 3;++i) {
-      latestPublishedTopicData[i].mutable_timestamp()->set_seconds(0);
-      latestPublishedTopicData[i].mutable_timestamp()->set_nanos(0);
-  }
-  for(int i = 0;i < totalTopicAmount;++i) {
-      int randomValue = rand()%3;
+  parseConfig(argv[2]);
 
-      struct timeval tv;
-      gettimeofday(&tv, NULL);
-      Timestamp currentTp;
-      currentTp.set_seconds(tv.tv_sec);
-      currentTp.set_nanos(tv.tv_usec * 1000);
-
-      while(!eachRateAmount[randomValue] || google::protobuf::util::TimeUtil::DurationToMicroseconds(currentTp - *(latestPublishedTopicData[randomValue].mutable_timestamp())) <= configMap[topicName[randomValue]].period) {
-          randomValue = (randomValue + 1) % 3;
-          gettimeofday(&tv, NULL);
-          currentTp.set_seconds(tv.tv_sec);
-          currentTp.set_nanos(tv.tv_usec * 1000);
-      }
-
-      eachRateAmount[randomValue]--;
-      TopicData td;
-      td.set_topic(topicName[randomValue]);
-      td.set_data("Hello World");
-      gettimeofday(&tv, NULL);
-      Timestamp *tp = td.mutable_timestamp();
-      // *td.mutable_timestamp() = google::protobuf::util::TimeUtil::GetCurrentTime();
-      tp->set_seconds(tv.tv_sec);
-      tp->set_nanos(tv.tv_usec * 1000);
-      latestPublishedTopicData[randomValue] = td;
-      pub.Publish(td);
-  }
-  pub.done();
+  while(1);
 
   return 0;
 }

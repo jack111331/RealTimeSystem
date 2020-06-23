@@ -3,11 +3,12 @@
 BROKER=build/es_server
 SUB=build/es_sub
 PUB=build/es_pub
-CONFIG=config.json
+CONFIG=config
 for policy in EDF RM FIFO;
 do
-    for load in $(seq 50 50 1001);
+    for load in $(seq 20 20 101);
     do
+        config_file=$CONFIG-$load.json
         # create a folder to store result of this config
         mkdir $policy-$load
         # repeat the test 20 times
@@ -15,13 +16,13 @@ do
         do
             echo "----- Current Run --------"
             echo "| Policy: $policy "
-            echo "| Load: $load "
+            echo "| Load: $config_file "
             echo "| Round #$i "
             echo "--------------------------"
 
             echo "Starting our broker .."
-            echo "sudo ./$BROKER -c $CONFIG -s $policy -n $i &"
-            sudo ./$BROKER -c $CONFIG -s $policy -n $i &
+            echo "sudo ./$BROKER -c $config_file -s $policy -n $i &"
+            sudo ./$BROKER -c $config_file -s $policy -n $i &
 
             # allow a few seconds before we move on
             sleep 2
@@ -34,8 +35,8 @@ do
             sleep 2
 
             echo "Starting our pub .."
-            echo "sudo ./$PUB -l $load -c $CONFIG &"
-            sudo ./$PUB -l $load -c $CONFIG & 
+            echo "sudo ./$PUB -c $config_file &"
+            sudo ./$PUB -c $config_file &
 
             # allow 30 seconds to warm up
             sleep 30

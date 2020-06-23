@@ -162,7 +162,8 @@ void atomicPush(const TopicData &topicData, long long int pushToPrioriQueueTimeD
   msgMeta.arriveTime = arriveTimeCount++;
   Config config = configMap[msgMeta.msg.topic()];
   msgMeta.period = config.period;
-  msgMeta.deadline = std::min(config.deadline - pushToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime, publisherSentTopicPeriod * publisherSentTopicBuffer);
+  msgMeta.deadline = std::min(config.deadline - pushToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime, publisherSentTopicPeriod * publisherSentTopicBuffer - publisherToBrokerTimingDifference);
+
   std::cout << "Config deadline: " << config.deadline << std::endl;
   std::cout << "Publisher to priority queue delta time: " << pushToPrioriQueueTimeDifference << std::endl;
   std::cout << "Calculated deadline: " << msgMeta.deadline << std::endl;
