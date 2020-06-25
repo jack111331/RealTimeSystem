@@ -1,1 +1,1 @@
-./es_pub -l 20 -c config.json
+./es_pub -c config.json

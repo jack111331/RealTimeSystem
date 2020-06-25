@@ -4,19 +4,19 @@
       "Name": "High",
       "Period": 40,
       "Deadline": 20000,
-      "Amount": 3
+      "SameRateTopicAmount": 3
     },
     {
       "Name": "Middle",
-      "Period": 50,
+      "Period": 500,
       "Deadline": 60000,
-      "Amount": 20
+      "SameRateTopicAmount": 400
     },
     {
       "Name": "Low",
-      "Period": 80,
+      "Period": 200,
       "Deadline": 80000,
-      "Amount": 5
+      "SameRateTopicAmount": 2
     }
   ]
 }

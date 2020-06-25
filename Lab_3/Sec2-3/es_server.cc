@@ -57,10 +57,11 @@ using es::NoUse;
 
 using nlohmann::json;
 
-pthread_mutex_t mutexTemp;
-pthread_cond_t cvTemp;
-ServerWriter<TopicData>* writerTemp = NULL;
-TopicData tdTemp;
+std::vector<pthread_mutex_t> mutexTempList;
+std::vector<pthread_cond_t> cvTempList;
+std::vector<ServerWriter<TopicData>*> writerTempList;
+pthread_mutex_t mutexWriter;
+std::vector<int> handlerIndexList;
 
 pthread_mutex_t mutexPq;
 
@@ -77,10 +78,10 @@ struct Config {
 
 static std::map<std::string, Config> configMap;
 
-int arriveTimeCount;
+long long int arriveTimeCount;
 
 struct MessageMeta {
-  int arriveTime;
+  long long int arriveTime;
   int period;
   long long int deadline;
   TopicData msg;
@@ -94,7 +95,7 @@ struct EDF {
 
 struct RM {
   bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
-    return lhs.period < rhs.period;
+    return lhs.period > rhs.period;
   }
 };
 
@@ -150,19 +151,22 @@ public:
 static std::priority_queue<MessageMeta, std::vector<MessageMeta>, SchedulingStrategy> *pq = nullptr;
 
 bool atomicHasData() {
-  int size = 0;
+    // has specific rate topic data
+  bool result = false;
   pthread_mutex_lock(&mutexPq);
-  size = pq->size();
+  result = pq->size()>0;
   pthread_mutex_unlock(&mutexPq);
-  return size > 0;
+  return result;
 }
 
-void atomicPush(TopicData &topicData) {
-  MessageMeta msgMeta;
+void atomicPush(TopicData &topicData, int handlerIndex) {
+  Config config = configMap[topicData.topic()];
+  MessageMeta msgMeta = {
+          arriveTimeCount++, // arrive time
+          config.period, // period
+          0 // deadline, will be calculate later
+  };
   msgMeta.msg = topicData;
-  msgMeta.arriveTime = arriveTimeCount++;
-  Config config = configMap[msgMeta.msg.topic()];
-  msgMeta.period = config.period;
 
   struct timeval tv;
   Timestamp sentTopicTime = *topicData.mutable_timestamp();
@@ -180,24 +184,21 @@ void atomicPush(TopicData &topicData) {
   pthread_mutex_lock(&mutexPq);
   pq->push(msgMeta);
   pthread_mutex_unlock(&mutexPq);
+  pthread_mutex_lock(&mutexTempList[handlerIndex]);
+  pthread_cond_broadcast(&cvTempList[handlerIndex]);
+  pthread_mutex_unlock(&mutexTempList[handlerIndex]);
+//    std::cout << "Broadcasted" << std::endl;
+//    fflush(stdout);
 
-  pthread_mutex_lock(&mutexTemp);
-  pthread_cond_broadcast(&cvTemp);
-  pthread_mutex_unlock(&mutexTemp);
 }
 
-TopicData atomicTop() {
+TopicData atomicTopAndPop() {
   MessageMeta top;
   pthread_mutex_lock(&mutexPq);
   top = pq->top();
-  pthread_mutex_unlock(&mutexPq);
-  return top.msg;
-}
-
-void atomicPop() {
-  pthread_mutex_lock(&mutexPq);
   pq->pop();
   pthread_mutex_unlock(&mutexPq);
+  return top.msg;
 }
 
 void pinCPU (int cpu_number)
@@ -215,24 +216,21 @@ void pinCPU (int cpu_number)
 }
 
 void* priorityTask (void *param) {
-    // TODO handle for each thread
+  // TODO handle for each thread
+  int handlerIndex = *((int *)param);
   std::cout << "Starting the task...\n";
   while (1) {
     while (!atomicHasData()) {
-        pthread_mutex_lock(&mutexTemp);
-        pthread_cond_wait(&cvTemp, &mutexTemp);
-        pthread_mutex_unlock(&mutexTemp);
+        pthread_mutex_lock(&mutexTempList[handlerIndex]);
+        pthread_cond_wait(&cvTempList[handlerIndex], &mutexTempList[handlerIndex]);
+        pthread_mutex_unlock(&mutexTempList[handlerIndex]);
     }
-//    std::cout << "hasData" << std::endl;
-//    fflush(stdout);
-    tdTemp = atomicTop();
-    atomicPop();
-    if (writerTemp != NULL) {
-//      std::cout << "{" << tdTemp.topic() << ": " << tdTemp.data() << "}" << std::endl;
-//      fflush(stdout);
-      writerTemp->Write(tdTemp);
-    }
-    else {
+    TopicData topicToBeSent = atomicTopAndPop();
+    if (writerTempList[handlerIndex] != NULL) {
+        pthread_mutex_lock(&mutexWriter);
+        writerTempList[handlerIndex]->Write(topicToBeSent);
+        pthread_mutex_unlock(&mutexWriter);
+    } else {
       std::cout << "no subscriber; discard the data\n";
     }
   }
@@ -245,19 +243,27 @@ class EventServiceImpl final : public EventService::Service {
  public:
   EventServiceImpl() {
     pinCPU(0);
-    pthread_create (&edgeComputing_threads, NULL, priorityTask, NULL);
-    pinCPU(1);
 
-    mutexTemp = PTHREAD_MUTEX_INITIALIZER;
     mutexPq = PTHREAD_MUTEX_INITIALIZER;
-    cvTemp = PTHREAD_COND_INITIALIZER;
+    mutexWriter = PTHREAD_MUTEX_INITIALIZER;
 
+    for(int i = 0;i < handlerIndexList.size();++i) {
+        mutexTempList[i] = PTHREAD_MUTEX_INITIALIZER;
+        cvTempList[i] = PTHREAD_COND_INITIALIZER;
+        edgeComputing_threads.push_back(pthread_t());
+        pthread_create (&edgeComputing_threads[i], NULL, priorityTask, &handlerIndexList[i]);
+    }
+    pinCPU(1);
   }
 
   Status Subscribe(ServerContext* context,
                    const TopicRequest* request,
                    ServerWriter<TopicData>* writer) override {
-    writerTemp = writer;
+    std::cout << "Subscriber Channel Created" << std::endl;
+    // assign each threads in thread pool a writer to write
+    for(auto i : handlerIndexList) {
+      writerTempList[i] = writer;
+    }
     sleep(3600); // preserve the validity of the writer pointer
     return Status::OK;
   }
@@ -266,15 +272,19 @@ class EventServiceImpl final : public EventService::Service {
                    ServerReader<TopicData>* reader,
                    NoUse* nouse) override {
     TopicData td;
+    int handlerIndex = currentHandlerIndex++;
+    std::cout << "Publisher Channel Created" << std::endl;
     while (reader->Read(&td)) {
-        atomicPush(td);
+        // Push with handler id
+        atomicPush(td, handlerIndex);
     }
     return Status::OK;
   }
 
  private:
   ServerWriter<TopicData>* writer_ = NULL;
-  pthread_t edgeComputing_threads;
+  std::vector<pthread_t> edgeComputing_threads;
+  int currentHandlerIndex = 0;
 };
 
 void RunServer() {
@@ -314,13 +324,19 @@ void parseConfig(const std::string &configFilename) {
   }
   */
   std::vector<json> topicListJson = configJson["Topic"];
-  for(auto topicJson: topicListJson) {
+  for(int i = 0;i < topicListJson.size();++i) {
+      const json topicJson = topicListJson[i];
     Config topicConfig = {
       topicJson["Period"],
       topicJson["Deadline"]
     };
     std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
     configMap[topicJson["Name"]] = topicConfig;
+
+    mutexTempList.push_back(pthread_mutex_t());
+    cvTempList.push_back(pthread_cond_t());
+    writerTempList.push_back(nullptr);
+      handlerIndexList.push_back(i);
   }
 }
 

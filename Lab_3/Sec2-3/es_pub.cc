@@ -132,7 +132,7 @@ void* publisherTask(void *param) {
             currentTp.set_seconds(tv.tv_sec);
             currentTp.set_nanos(tv.tv_usec * 1000);
 
-            if(google::protobuf::util::TimeUtil::DurationToMicroseconds(currentTp - configMap[topicName].sameRateLatestTopicArrivalList[i]) > configMap[topicName].period) {
+            if(google::protobuf::util::TimeUtil::DurationToMilliseconds(currentTp - configMap[topicName].sameRateLatestTopicArrivalList[i]) > configMap[topicName].period) {
                 TopicData td;
                 td.set_topic(topicName);
                 td.set_data("Hello World");
@@ -143,6 +143,8 @@ void* publisherTask(void *param) {
                 tp->set_nanos(tv.tv_usec * 1000);
                 configMap[topicName].sameRateLatestTopicArrivalList[i] = *tp;
                 pub.Publish(td);
+//                std::cout << "Published Data" << std::endl;
+//                fflush(stdout);
             }
         }
     }
@@ -172,17 +174,19 @@ void parseConfig(const std::string &configFilename) {
                 topicJson["Period"],
                 topicJson["Deadline"]
         };
-        configMap[topicJson["Name"]] = topicConfig;
-        strncpy(configMap[topicJson["Name"]].name, topicJson["Name"].get<std::string>().c_str(), topicJson["Name"].get<std::string>().size());
         int sameRateTopicAmount = topicJson["SameRateTopicAmount"];
         for(int i = 0;i < sameRateTopicAmount;++i) {
             topicConfig.sameRateLatestTopicArrivalList.push_back(Timestamp());
+            topicConfig.sameRateLatestTopicArrivalList[i].set_seconds(0);
+            topicConfig.sameRateLatestTopicArrivalList[i].set_nanos(0);
         }
+        configMap[topicJson["Name"]] = topicConfig;
+        strncpy(configMap[topicJson["Name"]].name, topicJson["Name"].get<std::string>().c_str(), topicJson["Name"].get<std::string>().size());
         std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << ", Amount: " << sameRateTopicAmount << std::endl;
     }
-    for(auto config: configMap) {
+    for(auto it = configMap.begin();it != configMap.end();++it) {
         pthread_t newThread;
-        pthread_create(&newThread, NULL, publisherTask, config.second.name);
+        pthread_create(&newThread, NULL, publisherTask, it->second.name);
         publisherThreadList.push_back(newThread);
     }
 }
