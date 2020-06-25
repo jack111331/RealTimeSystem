@@ -1,7 +1,0 @@
-/snap/clion/114/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/edge/Code/RealTimeSystem/Lab_3/Sec2-2
--- Found Protobuf: /bin/protoc-3.11.2.0 (found version "3.11.2.0") 
--- Using protobuf 
--- Using gRPC 1.28.1
--- Configuring done
--- Generating done
--- Build files have been written to: /home/edge/Code/RealTimeSystem/Lab_3/Sec2-2/cmake-build-debug

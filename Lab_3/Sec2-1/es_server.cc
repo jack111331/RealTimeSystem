@@ -57,17 +57,15 @@ using es::NoUse;
 
 using nlohmann::json;
 
-std::vector<pthread_mutex_t> mutexTempList;
-std::vector<pthread_cond_t> cvTempList;
 std::vector<ServerWriter<TopicData>*> writerTempList;
+std::vector<TopicData> topicDataList;
 pthread_mutex_t mutexWriter;
 std::vector<int> handlerIndexList;
+
 
 pthread_mutex_t mutexPq;
 
 const long long int brokerToSubscriberEstimateTime = 5000; // us
-const long long int publisherSentTopicBuffer = 50;
-const long long int publisherSentTopicPeriod = 3000;
 
 static std::string configFile;
 
@@ -150,16 +148,20 @@ public:
 
 static std::priority_queue<MessageMeta, std::vector<MessageMeta>, SchedulingStrategy> *pq = nullptr;
 
-bool atomicHasData() {
+bool atomicTryToPullData(int handlerIndex) {
     // has specific rate topic data
-  bool result = false;
+  bool result;
   pthread_mutex_lock(&mutexPq);
   result = pq->size()>0;
+  if(result) {
+      topicDataList[handlerIndex] = pq->top().msg;
+      pq->pop();
+  }
   pthread_mutex_unlock(&mutexPq);
   return result;
 }
 
-void atomicPush(TopicData &topicData, int handlerIndex) {
+void atomicPush(TopicData &topicData) {
   Config config = configMap[topicData.topic()];
   MessageMeta msgMeta = {
           arriveTimeCount++, // arrive time
@@ -184,19 +186,7 @@ void atomicPush(TopicData &topicData, int handlerIndex) {
   pthread_mutex_lock(&mutexPq);
   pq->push(msgMeta);
   pthread_mutex_unlock(&mutexPq);
-  pthread_mutex_lock(&mutexTempList[handlerIndex]);
-  pthread_cond_broadcast(&cvTempList[handlerIndex]);
-  pthread_mutex_unlock(&mutexTempList[handlerIndex]);
 
-}
-
-TopicData atomicTopAndPop() {
-  MessageMeta top;
-  pthread_mutex_lock(&mutexPq);
-  top = pq->top();
-  pq->pop();
-  pthread_mutex_unlock(&mutexPq);
-  return top.msg;
 }
 
 void pinCPU (int cpu_number)
@@ -217,15 +207,10 @@ void* priorityTask (void *param) {
   int handlerIndex = *((int *)param);
   std::cout << "Starting the task...\n";
   while (1) {
-    while (!atomicHasData()) {
-        pthread_mutex_lock(&mutexTempList[handlerIndex]);
-        pthread_cond_wait(&cvTempList[handlerIndex], &mutexTempList[handlerIndex]);
-        pthread_mutex_unlock(&mutexTempList[handlerIndex]);
-    }
-    TopicData topicToBeSent = atomicTopAndPop();
+    while (!atomicTryToPullData(handlerIndex));
     if (writerTempList[handlerIndex] != NULL) {
         pthread_mutex_lock(&mutexWriter);
-        writerTempList[handlerIndex]->Write(topicToBeSent);
+        writerTempList[handlerIndex]->Write(topicDataList[handlerIndex]);
         pthread_mutex_unlock(&mutexWriter);
     } else {
       std::cout << "no subscriber; discard the data\n";
@@ -245,8 +230,6 @@ class EventServiceImpl final : public EventService::Service {
     mutexWriter = PTHREAD_MUTEX_INITIALIZER;
 
     for(int i = 0;i < handlerIndexList.size();++i) {
-        mutexTempList[i] = PTHREAD_MUTEX_INITIALIZER;
-        cvTempList[i] = PTHREAD_COND_INITIALIZER;
         edgeComputing_threads.push_back(pthread_t());
         pthread_create (&edgeComputing_threads[i], NULL, priorityTask, &handlerIndexList[i]);
     }
@@ -269,11 +252,10 @@ class EventServiceImpl final : public EventService::Service {
                    ServerReader<TopicData>* reader,
                    NoUse* nouse) override {
     TopicData td;
-    int handlerIndex = currentHandlerIndex++;
     std::cout << "Publisher Channel Created" << std::endl;
     while (reader->Read(&td)) {
         // Push with handler id
-        atomicPush(td, handlerIndex);
+        atomicPush(td);
     }
     return Status::OK;
   }
@@ -281,7 +263,6 @@ class EventServiceImpl final : public EventService::Service {
  private:
   ServerWriter<TopicData>* writer_ = NULL;
   std::vector<pthread_t> edgeComputing_threads;
-  int currentHandlerIndex = 0;
 };
 
 void RunServer() {
@@ -330,10 +311,9 @@ void parseConfig(const std::string &configFilename) {
     std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
     configMap[topicJson["Name"]] = topicConfig;
 
-    mutexTempList.push_back(pthread_mutex_t());
-    cvTempList.push_back(pthread_cond_t());
     writerTempList.push_back(nullptr);
-      handlerIndexList.push_back(i);
+    handlerIndexList.push_back(i);
+      topicDataList.push_back(TopicData());
   }
 }
 

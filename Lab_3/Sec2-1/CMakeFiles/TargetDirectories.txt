@@ -1,5 +1,0 @@
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/CMakeFiles/rebuild_cache.dir
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/CMakeFiles/edit_cache.dir
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/CMakeFiles/es_sub.dir
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/CMakeFiles/es_pub.dir
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-1/CMakeFiles/es_server.dir
