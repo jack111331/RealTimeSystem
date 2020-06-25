@@ -1,1 +1,1 @@
-./es_sub -t High 
+./es_sub

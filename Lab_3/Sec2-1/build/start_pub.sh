@@ -1,1 +1,1 @@
-./es_pub -t High -m Helloworld
+./es_pub -c config.json

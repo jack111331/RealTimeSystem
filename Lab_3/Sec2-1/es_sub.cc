@@ -59,8 +59,9 @@ class Subscriber {
     while (reader->Read(&td)) {
      Timestamp timestamp = google::protobuf::util::TimeUtil::GetCurrentTime();
       gettimeofday(&tv, NULL);
-      std::cout << "{" << td.topic() << ": " << td.data() << "}  ";
-      std::cout << "response time = " << tv.tv_sec - td.timestamp().seconds() << "s " << (tv.tv_usec - td.timestamp().nanos()/1000)/1000 << "ms\n";
+//      std::cout << "{" << td.topic() << ": " << td.data() << "}  ";
+//      fflush(stdout);
+//      std::cout << "response time = " << tv.tv_sec - td.timestamp().seconds() << "s " << (tv.tv_usec - td.timestamp().nanos()/1000)/1000 << "ms\n";
       // std::cout << "response time = " << google::protobuf::util::TimeUtil::DurationToSeconds(google::protobuf::util::TimeUtil::GetCurrentTime() - td.timestamp()) << " ms\n";
     }
     Status status = reader->Finish();
@@ -71,17 +72,29 @@ class Subscriber {
   int id_;
 };
 
+void pinCPU (int cpu_number)
+{
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+
+    CPU_SET(cpu_number, &mask);
+
+    if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) == -1)
+    {
+        perror("sched_setaffinity");
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, char** argv) {
-  if (argc != 3) {
-    std::cout << "Usage: " << argv[0] << " -t topic\n";
-    exit(0);
-  }
+    pinCPU(3);
   std::string target_str;
   target_str = "localhost:50051";
   Subscriber sub(2, grpc::CreateChannel(
       target_str, grpc::InsecureChannelCredentials()));
   TopicRequest request;
-  request.set_topic(argv[2]);
+  // Doesn't matter
+  request.set_topic("High");
   sub.Subscribe(request);
   sleep(3600);
 

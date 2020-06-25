@@ -22,13 +22,15 @@
 #include <memory>
 #include <string>
 #include <fstream>
+#include <vector>
 
 #include <grpcpp/grpcpp.h>
+#include <google/protobuf/util/time_util.h>
 
 #include "es.grpc.pb.h"
-#include <sys/time.h>
 
-#include <google/protobuf/util/time_util.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include "json.hpp"
 
@@ -48,12 +50,14 @@ using google::protobuf::Timestamp;
 using nlohmann::json;
 
 struct Config {
+    char name[50];
     int period;
     int deadline;
-    int amount;
+    std::vector<Timestamp> sameRateLatestTopicArrivalList;
 };
 
 static std::map<std::string, Config> configMap;
+std::vector<pthread_t> publisherThreadList;
 
 class Publisher {
  public:
@@ -76,7 +80,7 @@ class Publisher {
       exit(0);
     }
     else {
-      std::cout << "sent {" << td.topic() << ": " << td.data() << "}" << std::endl;
+//      std::cout << "sent {" << td.topic() << ": " << td.data() << "}" << std::endl;
     }
   }
 
@@ -98,6 +102,54 @@ class Publisher {
   std::unique_ptr<ClientWriter<TopicData> > writer_;
 };
 
+void pinCPU (int cpu_number)
+{
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+
+    CPU_SET(cpu_number, &mask);
+
+    if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) == -1)
+    {
+        perror("sched_setaffinity");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void* publisherTask(void *param) {
+    std::cout << "Starting the task...\n";
+    std::string target_str;
+    target_str = "localhost:50051";
+    Publisher pub(1, grpc::CreateChannel(
+            target_str, grpc::InsecureChannelCredentials()));
+    std::cout << "Start to send data to our server..\n";
+    std::string topicName = (const char *)param;
+    while(1) {
+        for(int i = 0;i < configMap[topicName].sameRateLatestTopicArrivalList.size();++i) {
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            Timestamp currentTp;
+            currentTp.set_seconds(tv.tv_sec);
+            currentTp.set_nanos(tv.tv_usec * 1000);
+
+            if(google::protobuf::util::TimeUtil::DurationToMilliseconds(currentTp - configMap[topicName].sameRateLatestTopicArrivalList[i]) > configMap[topicName].period) {
+                TopicData td;
+                td.set_topic(topicName);
+                td.set_data("Hello World");
+                gettimeofday(&tv, NULL);
+                Timestamp *tp = td.mutable_timestamp();
+                // *td.mutable_timestamp() = google::protobuf::util::TimeUtil::GetCurrentTime();
+                tp->set_seconds(tv.tv_sec);
+                tp->set_nanos(tv.tv_usec * 1000);
+                configMap[topicName].sameRateLatestTopicArrivalList[i] = *tp;
+                pub.Publish(td);
+//                std::cout << "Published Data" << std::endl;
+//                fflush(stdout);
+            }
+        }
+    }
+    pub.done();
+}
 
 void parseConfig(const std::string &configFilename) {
     std::ifstream ifs(configFilename);
@@ -110,6 +162,7 @@ void parseConfig(const std::string &configFilename) {
           "Name":
           "Period":
           "Deadline":
+          "SameRateTopicAmount":
         }
       ]
     }
@@ -117,36 +170,36 @@ void parseConfig(const std::string &configFilename) {
     std::vector<json> topicListJson = configJson["Topic"];
     for(auto topicJson: topicListJson) {
         Config topicConfig = {
+                "",
                 topicJson["Period"],
-                topicJson["Deadline"],
-                topicJson["Amount"]
+                topicJson["Deadline"]
         };
-        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << ", Amount: " << topicConfig.amount << std::endl;
+        int sameRateTopicAmount = topicJson["SameRateTopicAmount"];
+        for(int i = 0;i < sameRateTopicAmount;++i) {
+            topicConfig.sameRateLatestTopicArrivalList.push_back(Timestamp());
+            topicConfig.sameRateLatestTopicArrivalList[i].set_seconds(0);
+            topicConfig.sameRateLatestTopicArrivalList[i].set_nanos(0);
+        }
         configMap[topicJson["Name"]] = topicConfig;
+        strncpy(configMap[topicJson["Name"]].name, topicJson["Name"].get<std::string>().c_str(), topicJson["Name"].get<std::string>().size());
+        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << ", Amount: " << sameRateTopicAmount << std::endl;
+    }
+    for(auto it = configMap.begin();it != configMap.end();++it) {
+        pthread_t newThread;
+        pthread_create(&newThread, NULL, publisherTask, it->second.name);
+        publisherThreadList.push_back(newThread);
     }
 }
 
 int main(int argc, char** argv) {
-  if (argc != 5) {
-    std::cout << "Usage: " << argv[0] << " -t topic -m message\n";
+  pinCPU(2);
+  if (argc != 3) {
+    std::cout << "Usage: " << argv[0] << "-c config_file\n";
     exit(0);
   }
-  std::string target_str;
-  target_str = "localhost:50051";
-  Publisher pub(1, grpc::CreateChannel(
-      target_str, grpc::InsecureChannelCredentials()));
-  TopicData td;
-  std::cout << "Start to send data to our server..\n";
-  td.set_topic(argv[2]);
-  td.set_data(argv[4]);
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  Timestamp *tp = td.mutable_timestamp();
-  // *td.mutable_timestamp() = google::protobuf::util::TimeUtil::GetCurrentTime();
-  tp->set_seconds(tv.tv_sec);
-  tp->set_nanos(tv.tv_usec * 1000);
-  pub.Publish(td);
-  pub.done();
+  parseConfig(argv[2]);
+
+  while(1);
 
   return 0;
 }

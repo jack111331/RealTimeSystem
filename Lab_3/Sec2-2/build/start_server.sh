@@ -1,1 +1,1 @@
-sudo ./es_server -c config.json -s RM 
+./es_server -c config.json -s RM 

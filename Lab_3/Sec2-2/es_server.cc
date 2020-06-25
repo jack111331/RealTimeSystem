@@ -57,133 +57,147 @@ using es::NoUse;
 
 using nlohmann::json;
 
-ServerWriter<TopicData>* writerTemp = NULL;
-TopicData tdTemp;
+std::vector<pthread_mutex_t> mutexTempList;
+std::vector<pthread_cond_t> cvTempList;
+std::vector<ServerWriter<TopicData>*> writerTempList;
+pthread_mutex_t mutexWriter;
+std::vector<int> handlerIndexList;
 
 pthread_mutex_t mutexPq;
 
 const long long int brokerToSubscriberEstimateTime = 5000; // us
 const long long int publisherSentTopicBuffer = 50;
-const long long int publisherSentTopicPeriod = 3000;
 
 static std::string configFile;
 
 struct Config {
-  int period;
-  int deadline;
+    int period;
+    int deadline;
 };
 
 static std::map<std::string, Config> configMap;
 
-int arriveTimeCount;
+long long int arriveTimeCount;
 
 struct MessageMeta {
-  int arriveTime;
-  int period;
-  long long int deadline;
-  TopicData msg;
+    long long int arriveTime;
+    int period;
+    long long int deadline;
+    TopicData msg;
 };
 
 struct EDF {
-  bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
-    return lhs.deadline < rhs.deadline;
-  }
+    bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
+        return lhs.deadline < rhs.deadline;
+    }
 };
 
 struct RM {
-  bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
-    return lhs.period < rhs.period;
-  }
+    bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
+        return lhs.period > rhs.period;
+    }
 };
 
 struct FIFO {
-  bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
-    return lhs.arriveTime < rhs.arriveTime;
-  }
+    bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
+        return lhs.arriveTime < rhs.arriveTime;
+    }
 };
 
 enum class Strategy {
-  STRATEGY_EDF,
-  STRATEGY_FIFO,
-  STRATEGY_RM,
-  STRATEGY_UNDEFINED
+    STRATEGY_EDF,
+    STRATEGY_FIFO,
+    STRATEGY_RM,
+    STRATEGY_UNDEFINED
 };
 
 Strategy getSchedulingStrategy(const std::string &scheduleingString) {
-  if(scheduleingString == "EDF") {
-    return Strategy::STRATEGY_EDF;
-  } else if(scheduleingString == "FIFO") {
-    return Strategy::STRATEGY_FIFO;
-  } else if(scheduleingString == "RM") {
-    return Strategy::STRATEGY_RM;
-  } else {
-    return Strategy::STRATEGY_UNDEFINED;
-  }
+    if(scheduleingString == "EDF") {
+        return Strategy::STRATEGY_EDF;
+    } else if(scheduleingString == "FIFO") {
+        return Strategy::STRATEGY_FIFO;
+    } else if(scheduleingString == "RM") {
+        return Strategy::STRATEGY_RM;
+    } else {
+        return Strategy::STRATEGY_UNDEFINED;
+    }
 }
 
 class SchedulingStrategy {
 private:
-  Strategy m_schedulingStrategy;
-  struct EDF m_edf;
-  struct RM m_rm;
-  struct FIFO m_fifo;
+    Strategy m_schedulingStrategy;
+    struct EDF m_edf;
+    struct RM m_rm;
+    struct FIFO m_fifo;
 public:
-  void setSchedulingStrategy(Strategy a) {
-    m_schedulingStrategy = a;
-  }
-  bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
-    if(m_schedulingStrategy == Strategy::STRATEGY_EDF) {
-      return m_edf(lhs, rhs);
-    } else if(m_schedulingStrategy == Strategy::STRATEGY_FIFO) {
-      return m_fifo(lhs, rhs);
-    } else if(m_schedulingStrategy == Strategy::STRATEGY_RM) {
-      return m_rm(lhs, rhs);
-    } else {
-      std::cerr << "No valid Strategy" << std::endl;
-      exit(1);
+    void setSchedulingStrategy(Strategy a) {
+        m_schedulingStrategy = a;
     }
-  }
+    bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
+        if(m_schedulingStrategy == Strategy::STRATEGY_EDF) {
+            return m_edf(lhs, rhs);
+        } else if(m_schedulingStrategy == Strategy::STRATEGY_FIFO) {
+            return m_fifo(lhs, rhs);
+        } else if(m_schedulingStrategy == Strategy::STRATEGY_RM) {
+            return m_rm(lhs, rhs);
+        } else {
+            std::cerr << "No valid Strategy" << std::endl;
+            exit(1);
+        }
+    }
 };
 
 static std::priority_queue<MessageMeta, std::vector<MessageMeta>, SchedulingStrategy> *pq = nullptr;
 
-bool atomicHasData() {
-  int size = 0;
-  pthread_mutex_lock(&mutexPq);
-  size = pq->size();
-  pthread_mutex_unlock(&mutexPq);
-  return size > 0;
+bool atomicPriorityQueueHasData() {
+    // has specific rate topic data
+    bool result = false;
+    pthread_mutex_lock(&mutexPq);
+    result = pq->size()>0;
+    pthread_mutex_unlock(&mutexPq);
+    return result;
 }
+
 
 void atomicPush(const TopicData &topicData, long long int pushToPrioriQueueTimeDifference) {
-  pthread_mutex_lock(&mutexPq);
-  MessageMeta msgMeta;
-  msgMeta.msg = topicData;
-  msgMeta.arriveTime = arriveTimeCount++;
-  Config config = configMap[msgMeta.msg.topic()];
-  msgMeta.period = config.period;
-  msgMeta.deadline = std::min(config.deadline - pushToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime, publisherSentTopicPeriod * publisherSentTopicBuffer - publisherToBrokerTimingDifference);
+    Config config = configMap[topicData.topic()];
+    MessageMeta msgMeta = {
+            arriveTimeCount++, // arrive time
+            config.period, // period
+            0 // deadline, will be calculate later
+    };
+    msgMeta.msg = topicData;
 
-  std::cout << "Config deadline: " << config.deadline << std::endl;
-  std::cout << "Publisher to priority queue delta time: " << pushToPrioriQueueTimeDifference << std::endl;
-  std::cout << "Calculated deadline: " << msgMeta.deadline << std::endl;
+    struct timeval tv;
+    Timestamp sentTopicTime = *topicData.mutable_timestamp();
+    Timestamp pushToPrioriQueueTime = Timestamp();
+    gettimeofday(&tv, NULL);
+    pushToPrioriQueueTime.set_seconds(tv.tv_sec);
+    pushToPrioriQueueTime.set_nanos(tv.tv_usec * 1000);
 
-  pq->push(msgMeta);
+    long long int publisherToPrioriQueueTimeDifference = google::protobuf::util::TimeUtil::DurationToMicroseconds(pushToPrioriQueueTime-sentTopicTime);
+    // transform from config deadline to broker schedule deadline, it will be the minimum of subtract it from its time just before pushed into priority queue, and estimated broker to subscriber time
+    // or the publisher's buffer multiply publisher's topic sending period subtract the timing difference of publisher to broker's priority queue and broker to subscriber.
+    msgMeta.deadline = std::min(config.deadline - publisherToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime, config.period * publisherSentTopicBuffer - publisherToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime);
+//  std::cout << "Config deadline: " << config.deadline << std::endl;
+//  std::cout << "Publisher to priority queue delta time: " << pushToPrioriQueueTimeDifference << std::endl;
+//  std::cout << "Calculated deadline: " << msgMeta.deadline << std::endl;
 
-  pthread_mutex_unlock(&mutexPq);
+    pthread_mutex_lock(&mutexPq);
+    pq->push(msgMeta);
+    pthread_mutex_unlock(&mutexPq);
+    pthread_mutex_lock(&mutexTempList[handlerIndex]);
+    pthread_cond_broadcast(&cvTempList[handlerIndex]);
+    pthread_mutex_unlock(&mutexTempList[handlerIndex]);
 }
 
-TopicData atomicTop() {
-  pthread_mutex_lock(&mutexPq);
-  MessageMeta top = pq->top();
-  pthread_mutex_unlock(&mutexPq);
-  return top.msg;
-}
-
-void atomicPop() {
-  pthread_mutex_lock(&mutexPq);
-  pq->pop();
-  pthread_mutex_unlock(&mutexPq);
+TopicData atomicTopAndPop() {
+    MessageMeta top;
+    pthread_mutex_lock(&mutexPq);
+    top = pq->top();
+    pq->pop();
+    pthread_mutex_unlock(&mutexPq);
+    return top.msg;
 }
 
 void pinCPU (int cpu_number)
@@ -200,134 +214,148 @@ void pinCPU (int cpu_number)
     }
 }
 
-void* priorityTask (void *param) {
-  std::cout << "Starting the task...\n";
-  while (1) {
-    while (!atomicHasData());
-    tdTemp = atomicTop();
-    atomicPop();
-    if (writerTemp != NULL) {
-      std::cout << "{" << tdTemp.topic() << ": " << tdTemp.data() << "}" << std::endl;
-      writerTemp->Write(tdTemp);
+void* sendTopicToSubscriberTask (void *param) {
+    int handlerIndex = *((int *)param);
+    std::cout << "Starting the task...\n";
+    while (1) {
+        while (!atomicHasData()) {
+            pthread_mutex_lock(&mutexTempList[handlerIndex]);
+            pthread_cond_wait(&cvTempList[handlerIndex], &mutexTempList[handlerIndex]);
+            pthread_mutex_unlock(&mutexTempList[handlerIndex]);
+        }
+        TopicData topicToBeSent = atomicTopAndPop();
+        if (writerTempList[handlerIndex] != NULL) {
+            pthread_mutex_lock(&mutexWriter);
+            writerTempList[handlerIndex]->Write(topicToBeSent);
+            pthread_mutex_unlock(&mutexWriter);
+        } else {
+            std::cout << "no subscriber; discard the data\n";
+        }
     }
-    else {
-      std::cout << "no subscriber; discard the data\n";
-    }
-  }
 }
 
 
 // Logic and data behind the server's behavior.
 class EventServiceImpl final : public EventService::Service {
 
- public:
-  EventServiceImpl() {
-    pinCPU(0);
-    pthread_create (&edgeComputing_threads, NULL, priorityTask, NULL);
-    pinCPU(1);
+public:
+    EventServiceImpl() {
+        pinCPU(0);
 
-    mutexPq = PTHREAD_MUTEX_INITIALIZER;
-  }
+        mutexPq = PTHREAD_MUTEX_INITIALIZER;
+        mutexWriter = PTHREAD_MUTEX_INITIALIZER;
 
-  Status Subscribe(ServerContext* context,
-                   const TopicRequest* request,
-                   ServerWriter<TopicData>* writer) override {
-    writerTemp = writer;
-    sleep(3600); // preserve the validity of the writer pointer
-    return Status::OK;
-  }
+        for(int i = 0;i < handlerIndexList.size();++i) {
+            mutexTempList[i] = PTHREAD_MUTEX_INITIALIZER;
+            cvTempList[i] = PTHREAD_COND_INITIALIZER;
+            edgeComputing_threads.push_back(pthread_t());
+            pthread_create (&edgeComputing_threads[i], NULL, priorityTask, &handlerIndexList[i]);
+        }
+        pinCPU(1);
+    }
 
-  Status Publish(ServerContext* context,
+    Status Subscribe(ServerContext* context,
+                     const TopicRequest* request,
+                     ServerWriter<TopicData>* writer) override {
+        std::cout << "Subscriber Channel Created" << std::endl;
+        // assign each threads in thread pool a writer to write
+        for(auto i : handlerIndexList) {
+            writerTempList[i] = writer;
+        }
+        sleep(3600); // preserve the validity of the writer pointer
+        return Status::OK;
+    }
+
+    Status Publish(ServerContext* context,
                    ServerReader<TopicData>* reader,
                    NoUse* nouse) override {
-    TopicData td;
-    while (reader->Read(&td)) {
-      if (td.topic() != "High" && td.topic() != "Middle" && td.topic() != "Low") {
-        std::cerr << "Publish: got an unidentified topic!\n";
-      } else {
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        Timestamp sentTopicTime = *td.mutable_timestamp();
-        Timestamp pushToPrioriQueueTime = Timestamp();
-        // *td.mutable_timestamp() = google::protobuf::util::TimeUtil::GetCurrentTime();
-        pushToPrioriQueueTime.set_seconds(tv.tv_sec);
-        pushToPrioriQueueTime.set_nanos(tv.tv_usec * 1000);
-        atomicPush(td, google::protobuf::util::TimeUtil::DurationToMicroseconds(pushToPrioriQueueTime-sentTopicTime));
-      }
+        TopicData td;
+        int handlerIndex = currentHandlerIndex++;
+        std::cout << "Publisher Channel Created" << std::endl;
+        while (reader->Read(&td)) {
+            // Push with handler id
+            atomicPush(td, handlerIndex);
+        }
+        return Status::OK;
     }
-    return Status::OK;
-  }
 
- private:
-  ServerWriter<TopicData>* writer_ = NULL;
-  pthread_t edgeComputing_threads;
+private:
+    ServerWriter<TopicData>* writer_ = NULL;
+    std::vector<pthread_t> edgeComputing_threads;
+    int currentHandlerIndex = 0;
 };
 
 void RunServer() {
-  std::string server_address("0.0.0.0:50051");
-  EventServiceImpl service;
+    std::string server_address("0.0.0.0:50051");
+    EventServiceImpl service;
 
-  grpc::EnableDefaultHealthCheckService(true);
-  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-  ServerBuilder builder;
-  // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
-  builder.RegisterService(&service);
-  // Finally assemble the server.
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+    grpc::EnableDefaultHealthCheckService(true);
+    grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+    ServerBuilder builder;
+    // Listen on the given address without any authentication mechanism.
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    // Register "service" as the instance through which we'll communicate with
+    // clients. In this case it corresponds to an *synchronous* service.
+    builder.RegisterService(&service);
+    // Finally assemble the server.
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+    std::cout << "Server listening on " << server_address << std::endl;
 
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
-  server->Wait();
+    // Wait for the server to shutdown. Note that some other thread must be
+    // responsible for shutting down the server for this call to ever return.
+    server->Wait();
 }
 
 void parseConfig(const std::string &configFilename) {
-  std::ifstream ifs(configFilename);
-  json configJson;
-  ifs >> configJson;
-  /*
-  {
-    "Topic": [
-      {
-        "Name":
-        "Period":
-        "Deadline":
-      }
-    ]
-  }
-  */
-  std::vector<json> topicListJson = configJson["Topic"];
-  for(auto topicJson: topicListJson) {
-    Config topicConfig = {
-      topicJson["Period"],
-      topicJson["Deadline"]
-    };
-    std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
-    configMap[topicJson["Name"]] = topicConfig;
-  }
+    std::ifstream ifs(configFilename);
+    json configJson;
+    ifs >> configJson;
+    /*
+    {
+      "Topic": [
+        {
+          "Name":
+          "Period":
+          "Deadline":
+        }
+      ]
+    }
+    */
+    std::vector<json> topicListJson = configJson["Topic"];
+    for(int i = 0;i < topicListJson.size();++i) {
+        const json topicJson = topicListJson[i];
+        Config topicConfig = {
+                topicJson["Period"],
+                topicJson["Deadline"]
+        };
+        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
+        configMap[topicJson["Name"]] = topicConfig;
+
+        mutexTempList.push_back(pthread_mutex_t());
+        cvTempList.push_back(pthread_cond_t());
+        writerTempList.push_back(nullptr);
+        handlerIndexList.push_back(i);
+    }
 }
 
 int main(int argc, char** argv) {
-  for(int i = 1;i < argc;++i) {
-    std::string cmd(argv[i]);
-    if(cmd == "-c") {
-      configFile = argv[++i];
-      parseConfig(configFile);
-    } else if(cmd == "-s") {
-      std::string schedulingString = argv[++i];
-      SchedulingStrategy ss;
-      ss.setSchedulingStrategy(getSchedulingStrategy(schedulingString));
-      pq = new std::priority_queue<MessageMeta, std::vector<MessageMeta>, SchedulingStrategy>(ss);
+    for(int i = 1;i < argc;++i) {
+        std::string cmd(argv[i]);
+        if(cmd == "-c") {
+            configFile = argv[++i];
+            parseConfig(configFile);
+        } else if(cmd == "-s") {
+            std::string schedulingString = argv[++i];
+            SchedulingStrategy ss;
+            ss.setSchedulingStrategy(getSchedulingStrategy(schedulingString));
+            pq = new std::priority_queue<MessageMeta, std::vector<MessageMeta>, SchedulingStrategy>(ss);
+        }
     }
-  }
-  if(configFile == "" || !pq) {
-    std::cerr << "No config file or no scheduling strategy" << std::endl;
-    exit(2);
-  }
-  RunServer();
+    if(configFile == "" || !pq) {
+        std::cerr << "No config file or no scheduling strategy" << std::endl;
+        exit(2);
+    }
+    RunServer();
 
-  return 0;
+    return 0;
 }

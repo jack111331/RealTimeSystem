@@ -10,7 +10,7 @@
       "Name": "Middle",
       "Period": 500,
       "Deadline": 60000,
-      "SameRateTopicAmount": 400
+      "SameRateTopicAmount": 10000
     },
     {
       "Name": "Low",

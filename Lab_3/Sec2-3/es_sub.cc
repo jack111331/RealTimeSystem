@@ -59,10 +59,7 @@ class Subscriber {
     while (reader->Read(&td)) {
      Timestamp timestamp = google::protobuf::util::TimeUtil::GetCurrentTime();
       gettimeofday(&tv, NULL);
-//      std::cout << "{" << td.topic() << ": " << td.data() << "}  ";
-//      fflush(stdout);
-//      std::cout << "response time = " << tv.tv_sec - td.timestamp().seconds() << "s " << (tv.tv_usec - td.timestamp().nanos()/1000)/1000 << "ms\n";
-      // std::cout << "response time = " << google::protobuf::util::TimeUtil::DurationToSeconds(google::protobuf::util::TimeUtil::GetCurrentTime() - td.timestamp()) << " ms\n";
+      std::cout << "Publisher-To-Subscriber Latency = " << tv.tv_sec - td.timestamp().seconds() << " s " << (tv.tv_usec - td.timestamp().nanos()/1000) << " us\n";
     }
     Status status = reader->Finish();
   }
