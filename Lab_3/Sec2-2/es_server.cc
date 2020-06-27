@@ -164,12 +164,7 @@ bool atomicTryToPullData(int handlerIndex) {
 
 void atomicPush(const TopicData &topicData, long long int pushToPrioriQueueTimeDifference) {
     Config config = configMap[topicData.topic()];
-    MessageMeta msgMeta = {
-            arriveTimeCount++, // arrive time
-            config.period, // period
-            0 // deadline, will be calculate later
-    };
-    msgMeta.msg = topicData;
+
 
     struct timeval tv;
     Timestamp sentTopicTime = *topicData.mutable_timestamp();
@@ -181,12 +176,18 @@ void atomicPush(const TopicData &topicData, long long int pushToPrioriQueueTimeD
     long long int publisherToPrioriQueueTimeDifference = google::protobuf::util::TimeUtil::DurationToMicroseconds(pushToPrioriQueueTime-sentTopicTime);
     // transform from config deadline to broker schedule deadline, it will be the minimum of subtract it from its time just before pushed into priority queue, and estimated broker to subscriber time
     // or the publisher's buffer multiply publisher's topic sending period subtract the timing difference of publisher to broker's priority queue and broker to subscriber.
+    pthread_mutex_lock(&mutexPq);
+    MessageMeta msgMeta = {
+            arriveTimeCount++, // arrive time
+            config.period, // period
+            0 // deadline, will be calculate later
+    };
+    msgMeta.msg = topicData;
     msgMeta.deadline = std::min(config.deadline - publisherToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime, config.period * publisherSentTopicBuffer - publisherToPrioriQueueTimeDifference - brokerToSubscriberEstimateTime);
 //  std::cout << "Config deadline: " << config.deadline << std::endl;
 //  std::cout << "Publisher to priority queue delta time: " << pushToPrioriQueueTimeDifference << std::endl;
 //  std::cout << "Calculated deadline: " << msgMeta.deadline << std::endl;
 
-    pthread_mutex_lock(&mutexPq);
     pq->push(msgMeta);
     pthread_mutex_unlock(&mutexPq);
     pthread_mutex_lock(&mutexTempList[handlerIndex]);

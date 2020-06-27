@@ -50,21 +50,21 @@ class Subscriber {
         stub_(EventService::NewStub(channel)) {}
 
   void Subscribe(TopicRequest request) {
-    ClientContext context;
-    TopicData td;
-    struct timeval tv;
-    std::unique_ptr<ClientReader<TopicData> > reader(
-        stub_->Subscribe(&context, request));
-    std::cout << "Start to receive data...\n";
-    while (reader->Read(&td)) {
-     Timestamp timestamp = google::protobuf::util::TimeUtil::GetCurrentTime();
-      gettimeofday(&tv, NULL);
-      std::cout << "{" << td.topic() << ": " << td.data() << "}  ";
-      fflush(stdout);
-//      std::cout << "response time = " << tv.tv_sec - td.timestamp().seconds() << "s " << (tv.tv_usec - td.timestamp().nanos()/1000)/1000 << "ms\n";
-      // std::cout << "response time = " << google::protobuf::util::TimeUtil::DurationToSeconds(google::protobuf::util::TimeUtil::GetCurrentTime() - td.timestamp()) << " ms\n";
-    }
-    Status status = reader->Finish();
+      ClientContext context;
+      TopicData td;
+      struct timeval tv;
+      std::unique_ptr<ClientReader<TopicData> > reader(
+              stub_->Subscribe(&context, request));
+      std::cout << "Start to receive data...\n";
+      while (reader->Read(&td)) {
+          Timestamp currentTimestamp;
+          gettimeofday(&tv, NULL);
+          currentTimestamp.set_seconds(tv.tv_sec);
+          currentTimestamp.set_nanos(tv.tv_usec * 1000);
+          long long int durationMilliSecond = google::protobuf::util::TimeUtil::DurationToMilliseconds(currentTimestamp-td.timestamp());
+          std::cout << "Publisher-To-Subscriber Latency = " << durationMilliSecond/1000 << " s " << durationMilliSecond%1000 << " ms\n";
+      }
+      Status status = reader->Finish();
   }
 
  private:
