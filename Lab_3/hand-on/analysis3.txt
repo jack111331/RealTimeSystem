@@ -1,61 +1,102 @@
 根據過往的經驗，RM, EDF, FIFO這三種Scheduling Policy會在不同Workload下會有不同的Performance，也會在有不同的Task Sets時表現出不同的Performance。
 因此我打算設計一個實驗，情境為在不同Task Sets情況下，變動Workload對於這三種Scheduling Policy的Performance測量。
 
-在固定的一種Task Sets，變動Workload的情境下，我會分別使用
-2000, 4000, 6000, 8000, 10000
-上述這些Workload，來觀察CPU使用率。
-並將得到的結果畫出X軸為Workload，Y軸為CPU使用率的折線圖。
+在固定的一種Task Sets，變動Workload的情境下，我會分別使用事先設定好的Same Topic-rate amount of middle-rate topic，來測量出CPU使用率在20%, 40%, 60%, 80%, 100%時應該要使用哪些Same Topic-rate amount of middle-rate topic。
+並將得到的結果畫出X軸為CPU使用率，Y軸為Miss rate的折線圖，並且有三條折線分別代表使用的Scheduling Policies。
 
-將上述固定Task Sets分別套用不同的Task Sets，並變動Workload的情境下，我會分別使用
+我會分別使用一些不同的Task Sets，並事先測量出CPU使用率在20%, 40%, 60%, 80%, 100%時應該要使用哪些Same Topic-rate amount of middle-rate topic。
+舉例如下:
 {
 	"TaskSets": [
 		{
-			"High": {
-				"Period(ms)": 5,
-				"Deadline(us)": 1000
-			},
-			"Middle": {
-				"Period(ms)": 15,
-				"Deadline(us)": 10000
-			},
-			"Low": {
-				"Period(ms)": 50,
-				"Deadline(us)": 20000
-			}
+			"Workload": [
+				{
+					"CPU Percent": 20,
+					"Topic_1": {
+						"Period(ms)": 5,
+						"Deadline(us)": 1000,
+						"SameRateTopicAmount": 200
+					},
+					"Topic_2": {
+						"Period(ms)": 15,
+						"Deadline(us)": 10000,
+						"SameRateTopicAmount": 300
+					},
+					"Topic_3": {
+						"Period(ms)": 50,
+						"Deadline(us)": 20000,
+						"SameRateTopicAmount": 400
+					}
+				},
+				{
+					"CPU Percent": 40,
+					"Topic_1": {
+						"Period(ms)": 5,
+						"Deadline(us)": 1000,
+						"SameRateTopicAmount": 200
+					},
+					"Topic_2": {
+						"Period(ms)": 15,
+						"Deadline(us)": 10000,
+						"SameRateTopicAmount": 500
+					},
+					"Topic_3": {
+						"Period(ms)": 50,
+						"Deadline(us)": 20000,
+						"SameRateTopicAmount": 400
+					}
+				}
+
+			]
 		},
 		{
-			"High": {
-				"Period(ms)": 3,
-				"Deadline(us)": 5000
-			},
-			"Middle": {
-				"Period(ms)": 10,
-				"Deadline(us)": 8000
-			},
-			"Low": {
-				"Period(ms)": 20,
-				"Deadline(us)": 20000
-			}
-		},
-		{
-			"High": {
-				"Period(ms)": 4,
-				"Deadline(us)": 3000
-			},
-			"Middle": {
-				"Period(ms)": 12,
-				"Deadline(us)": 5000
-			},
-			"Low": {
-				"Period(ms)": 25,
-				"Deadline(us)": 10000
-			}
-		},
+			"Workload": [
+				{
+					"CPU Percent": 20,
+					"Topic_1": {
+						"Period(ms)": 10,
+						"Deadline(us)": 20000,
+						"SameRateTopicAmount": 300
+					},
+					"Topic_2": {
+						"Period(ms)": 25,
+						"Deadline(us)": 30000,
+						"SameRateTopicAmount": 200
+					},
+					"Topic_3": {
+						"Period(ms)": 45,
+						"Deadline(us)": 50000,
+						"SameRateTopicAmount": 450
+					}
+				},
+				{
+					"CPU Percent": 40,
+					"Topic_1": {
+						"Period(ms)": 10,
+						"Deadline(us)": 20000,
+						"SameRateTopicAmount": 300
+					},
+					"Topic_2": {
+						"Period(ms)": 25,
+						"Deadline(us)": 30000,
+						"SameRateTopicAmount": 400
+					},
+					"Topic_3": {
+						"Period(ms)": 45,
+						"Deadline(us)": 50000,
+						"SameRateTopicAmount": 450
+					}
+				}
+
+			]
+		}
+
 	]
 }
-上述這些Task Sets，並套用
-2000, 4000, 6000, 8000, 10000
-上述這些Workload來觀察CPU使用率。
-並將得到的結果對於每個Task Sets畫出X軸為Workload，Y軸為CPU使用率的折線圖。
-這樣就可以畫出三張，每張針對不同Task Sets在不同Workload情況下，CPU使用率的折線圖。
-如果要更進一步分析Miss Rate在這三種不同的Scheduling Policy下的數值表現，也可以在上述的實驗中多測量Miss Rate，並在畫折線圖時把Y軸替換為Miss Rate。 
+我設計的Subscriber會跟Broker建立一個單一的Connections，用來接收Broker發來的Topic。
+
+而Broker則會跟Publisher建立Config指定的Same-rate Topic數量的Connections，Broker會使用這些數量的Connections將Publisher傳來的Topic放入受Atomic Operation保護的Priority Queue，並依據指定的Scheduling Policies對傳送Topic的優先順序進行排序。
+然後我會依據有多少個Publisher到Broker的Connections開啟多少個Thread進Thread Pool，每當Priority Queue有資料時，Thread Pool中的Thread會把Topic從Priority Queue中拉出來，並傳送出去，因為在這邊使用的機制不是當有Topic被Push進Priority Queue時會觸動Mutex，讓特定Thread去處理，而是一直Loop等待Priority Queue有東西時才會跳出第二層Loop把Topic傳送給Subscriber，因此可以觀察出Thread Pool的CPU使用率永遠都是100%。另外因為Broker到Subscriber只有一個Connections，因此要用一個Mutex保護Writer確保當一個Thread在Write Topic給Subscriber時，不會有另一個Thread也在Write Topic給Subscriber。
+在Deadline Transform的部份，因為Config中定義的Deadline是由三個部份，分別是Publisher到Broker的Priority Queue的時間差，Broker從Publisher接收Topic到Dispatch Topic出來的時間差，與Broker到Subscriber的預期的時間差所組成，因此在Transform Deadline時，需要扣掉Publisher到Broker的Priority Queue的時間差與Broker到Subscriber的預期的時間差，才是在Scheduling Policy是EDF的情況下，Priority Queue 排序Deadline的真正時間。
+
+最後，Publisher我設計的機制是根據Config指定的Same-rate Topic數量創建數量與之相符的Thread，並且對每一個Thread我維護一個Vector，這個Vector的Size與Config中的SameRateTopicAmount一樣，而每個元素維護的是該Topic Task最後一次發送Topic的時間，在Thread中會根據這個時間與Config中的Period做對照，若目前時間減去該Topic Task最後一次發送Topic的時間小於Period，代表週期未滿，不能發送Topic給Broker。而在成功發送Topic給Broker後，會更新這個元素最後一次發送Topic的時間。這麼做雖然無法與開實際Same-rate Topic Amount數目的Thread還要真實反應每一個Field Device的真實情況，但考慮到目前個人或筆記型電腦只有最多16 Threads可以同時執行，再加上個人或筆記型電腦每個Thread的處理能力比Field Device還要好上不少，我覺得這是一個可以被接受的設計Trade-off。

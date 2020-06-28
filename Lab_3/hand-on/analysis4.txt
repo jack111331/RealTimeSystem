@@ -1,8 +1,6 @@
 因為Publisher的Period為T，而且最多可以儲存N個最新送出的Topic(這邊設存的Topic為Topic 0 ~ N-1，其中Topic 0為最新送出的Topic，Topic N-1為距離最新Topic，N-1個送出Topic的Topic)。
-而且也要考慮Publisher到Broker的時間(可以不用考慮Broker到Subscriber的時間，因為Primary Broker Crash之後Publisher會馬上知道且可以馬上送Topic給Backup Broker)，設此時間為T_p，
-因此針對每一個送出的Topic，他最晚可以被重送到Backup Broker的時間從Publisher送出去開始算，為N*T-T_p(因為Publisher最多只能保存N個，而且他每隔T Period送一次Topic，T_p為Publisher到Broker的傳輸時間)。
-Response time of each dispatching task因為代表的是從Topic進入Broker到Broker將Topic送出去給Subscriber的時間差，而且當Topic被送進Backup Broker就可以視為安全且無資料遺失的，因此對於最新送出的Topic的Timing Constraint就是上述的N*T-T_p，
-對於第二新送出的Topic的Timing Constraint就是的(N-1)*T-T_p。
+而且也要考慮Publisher到Broker的時間，設此時間為T_p，與Broker到Subscriber的時間，設此時間為T_s。
+因此針對每一個送出的Topic，他最晚可以被重送到Backup Broker的時間從Publisher送出去開始算，為N*T-T_p-T_s(因為Publisher最多只能保存N個，而且他每隔T Period送一次Topic，T_p為Publisher到Broker的傳輸時間，T_s為Broker到Subscriber的傳輸時間)。
 
-因此對於每一個Task，他的Deadline應該是min(原本的設定檔中的Topic Deadline減去從Publisher Send Topic到Broker到存進Broker Priority Queue的時間差, Response time of each dispatching task)，
+因此對於每一個Task，他的Deadline應該是 min(原本的設定檔中的Topic Deadline減去從Publisher Send Topic到Broker到存進Broker Priority Queue的時間差再減去Broker到Subscriber的預期時間, N*T-T_p-T_s)，
 這樣才可以確保每一個Topic都能至少一次從Publisher被送進Subscriber。 

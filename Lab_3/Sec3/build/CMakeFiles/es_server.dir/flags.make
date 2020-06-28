@@ -6,5 +6,5 @@ CXX_FLAGS =  -std=c++11 -g
 
 CXX_DEFINES = -DCARES_STATICLIB -D__CLANG_SUPPORT_DYN_ANNOTATION__
 
-CXX_INCLUDES = -I/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/build -isystem /include 
+CXX_INCLUDES = -I/home/edge/Code/RealTimeSystem/Lab_3/Sec3/build -isystem /include 
 

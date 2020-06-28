@@ -1,4 +1,4 @@
-/snap/clion/114/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/edge/Code/RealTimeSystem/Lab_3/Sec2-3
+/snap/clion/114/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/edge/Code/RealTimeSystem/Lab_3/Sec3
 -- The C compiler identification is GNU 10.1.0
 -- The CXX compiler identification is GNU 10.1.0
 -- Check for working C compiler: /usr/bin/cc
@@ -38,4 +38,4 @@ This warning is for project developers.  Use -Wno-dev to suppress it.
 -- Using gRPC 1.28.1
 -- Configuring done
 -- Generating done
--- Build files have been written to: /home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/build
+-- Build files have been written to: /home/edge/Code/RealTimeSystem/Lab_3/Sec3/build

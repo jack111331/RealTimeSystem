@@ -6,7 +6,7 @@ PUB=build/es_pub
 CONFIG=config
 for policy in EDF RM FIFO;
 do
-    for load in $(seq 60 20 101);
+    for load in $(seq 20 20 101);
     do
         config_file=$CONFIG-$load.json
         # create a folder to store result of this config
@@ -28,8 +28,8 @@ do
             sleep 2
 
             echo "Starting our sub .."
-            echo "sudo ./$SUB &" 
-            sudo ./$SUB & 
+            echo "sudo ./$SUB -c $config_file &" 
+            sudo ./$SUB -c $config_file &
 
             # allow a few seconds before we move on
             sleep 2

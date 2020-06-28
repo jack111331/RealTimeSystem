@@ -21,6 +21,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <fstream>
 
 #include <grpcpp/grpcpp.h>
 
@@ -30,6 +31,8 @@
 #include <sys/time.h>
 
 #include <google/protobuf/util/time_util.h>
+
+#include "json.hpp"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -42,6 +45,18 @@ using es::TopicData;
 using es::NoUse;
 
 using google::protobuf::Timestamp;
+
+using nlohmann::json;
+
+long long int totalTopic = 0;
+long long int missTopic = 0;
+
+struct Config {
+    int period;
+    int deadline;
+};
+
+static std::map<std::string, Config> configMap;
 
 class Subscriber {
  public:
@@ -59,10 +74,17 @@ class Subscriber {
     while (reader->Read(&td)) {
      Timestamp currentTimestamp;
       gettimeofday(&tv, NULL);
-        currentTimestamp.set_seconds(tv.tv_sec);
-        currentTimestamp.set_nanos(tv.tv_usec * 1000);
+      currentTimestamp.set_seconds(tv.tv_sec);
+      currentTimestamp.set_nanos(tv.tv_usec * 1000);
       long long int durationMilliSecond = google::protobuf::util::TimeUtil::DurationToMilliseconds(currentTimestamp-td.timestamp());
-      std::cout << "Publisher-To-Subscriber Latency = " << durationMilliSecond/1000 << " s " << durationMilliSecond%1000 << " ms\n";
+//      std::cout << "Publisher-To-Subscriber Latency = " << durationMilliSecond/1000 << " s " << durationMilliSecond%1000 << " ms\n";
+      // statistic data
+      totalTopic++;
+      long long int durationMicroSecond = google::protobuf::util::TimeUtil::DurationToMicroseconds(currentTimestamp-td.timestamp());
+      if(durationMicroSecond > configMap[td.topic()].deadline) {
+          missTopic++;
+      }
+      std::cout << "Current Received Topic: " << totalTopic << ", total miss Topic: " << missTopic << ", miss rate is " << ((double)missTopic)/((double)totalTopic) << std::endl;
     }
     Status status = reader->Finish();
   }
@@ -86,8 +108,42 @@ void pinCPU (int cpu_number)
     }
 }
 
+void parseConfig(const std::string &configFilename) {
+    /*
+    {
+      "Topic": [
+        {
+          "Name":
+          "Period":
+          "Deadline":
+          "SameRateTopicAmount":
+        }
+      ]
+    }
+    */
+    std::ifstream ifs(configFilename);
+    json configJson;
+    ifs >> configJson;
+    std::vector<json> topicListJson = configJson["Topic"];
+    for(int i = 0;i < topicListJson.size();++i) {
+        const json topicJson = topicListJson[i];
+        Config topicConfig = {
+                topicJson["Period"],
+                topicJson["Deadline"]
+        };
+        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
+        configMap[topicJson["Name"]] = topicConfig;
+    }
+}
+
 int main(int argc, char** argv) {
-    pinCPU(3);
+  pinCPU(3);
+  if (argc != 3) {
+      std::cout << "Usage: " << argv[0] << " -c config_file\n";
+      exit(0);
+  }
+  parseConfig(argv[2]);
+
   std::string target_str;
   target_str = "localhost:50051";
   Subscriber sub(2, grpc::CreateChannel(

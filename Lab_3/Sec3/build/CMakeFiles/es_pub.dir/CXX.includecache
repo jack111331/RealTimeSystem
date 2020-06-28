@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/es.grpc.pb.h
+/home/edge/Code/RealTimeSystem/Lab_3/Sec3/es.grpc.pb.h
 es.pb.h
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/es.pb.h
+/home/edge/Code/RealTimeSystem/Lab_3/Sec3/es.pb.h
 functional
 -
 grpc/impl/codegen/port_platform.h
@@ -48,7 +48,7 @@ grpcpp/impl/codegen/stub_options.h
 grpcpp/impl/codegen/sync_stream.h
 -
 
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/es.pb.h
+/home/edge/Code/RealTimeSystem/Lab_3/Sec3/es.pb.h
 limits
 -
 string
@@ -88,7 +88,7 @@ google/protobuf/port_def.inc
 google/protobuf/port_undef.inc
 -
 
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/es_pub.cc
+/home/edge/Code/RealTimeSystem/Lab_3/Sec3/es_pub.cc
 iostream
 -
 memory
@@ -104,15 +104,15 @@ grpcpp/grpcpp.h
 google/protobuf/util/time_util.h
 -
 es.grpc.pb.h
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/es.grpc.pb.h
+/home/edge/Code/RealTimeSystem/Lab_3/Sec3/es.grpc.pb.h
 sys/time.h
 -
 unistd.h
 -
 json.hpp
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/json.hpp
+/home/edge/Code/RealTimeSystem/Lab_3/Sec3/json.hpp
 
-/home/edge/Code/RealTimeSystem/Lab_3/Sec2-3/json.hpp
+/home/edge/Code/RealTimeSystem/Lab_3/Sec3/json.hpp
 algorithm
 -
 cassert

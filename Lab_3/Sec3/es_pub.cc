@@ -194,7 +194,7 @@ void parseConfig(const std::string &configFilename) {
 int main(int argc, char** argv) {
   pinCPU(2);
   if (argc != 3) {
-    std::cout << "Usage: " << argv[0] << "-c config_file\n";
+    std::cout << "Usage: " << argv[0] << " -c config_file\n";
     exit(0);
   }
   parseConfig(argv[2]);
