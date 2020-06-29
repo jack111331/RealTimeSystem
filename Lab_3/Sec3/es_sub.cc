@@ -57,6 +57,7 @@ struct Config {
 };
 
 static std::map<std::string, Config> configMap;
+std::vector<int> endToEndLatency;
 
 class Subscriber {
  public:
@@ -70,13 +71,14 @@ class Subscriber {
     struct timeval tv;
     std::unique_ptr<ClientReader<TopicData> > reader(
         stub_->Subscribe(&context, request));
-    std::cout << "Start to receive data...\n";
+//    std::cout << "Start to receive data...\n";
     while (reader->Read(&td)) {
      Timestamp currentTimestamp;
       gettimeofday(&tv, NULL);
       currentTimestamp.set_seconds(tv.tv_sec);
       currentTimestamp.set_nanos(tv.tv_usec * 1000);
       long long int durationMilliSecond = google::protobuf::util::TimeUtil::DurationToMilliseconds(currentTimestamp-td.timestamp());
+      endToEndLatency.push_back(durationMilliSecond);
 //      std::cout << "Publisher-To-Subscriber Latency = " << durationMilliSecond/1000 << " s " << durationMilliSecond%1000 << " ms\n";
       // statistic data
       totalTopic++;
@@ -84,7 +86,6 @@ class Subscriber {
       if(durationMicroSecond > configMap[td.topic()].deadline) {
           missTopic++;
       }
-      std::cout << "Current Received Topic: " << totalTopic << ", total miss Topic: " << missTopic << ", miss rate is " << ((double)missTopic)/((double)totalTopic) << std::endl;
     }
     Status status = reader->Finish();
   }
@@ -131,9 +132,19 @@ void parseConfig(const std::string &configFilename) {
                 topicJson["Period"],
                 topicJson["Deadline"]
         };
-        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
+//        std::cout << topicJson["Name"] << " " << ", Period: " << topicConfig.period << ", Deadline(us): " << topicConfig.deadline << std::endl;
         configMap[topicJson["Name"]] = topicConfig;
     }
+}
+
+void signal_handler( int signal_num ) {
+    // output: <total topic> <miss topic> <miss rate>
+    for(auto i: endToEndLatency) {
+        std::cout << i << std::endl;
+    }
+    std::cout << totalTopic << " " << missTopic << " " << ((double)missTopic)/((double)totalTopic) << std::endl;
+    // terminate program
+    exit(signal_num);
 }
 
 int main(int argc, char** argv) {
@@ -143,7 +154,9 @@ int main(int argc, char** argv) {
       exit(0);
   }
   parseConfig(argv[2]);
-
+  signal(SIGABRT, signal_handler);
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
   std::string target_str;
   target_str = "localhost:50051";
   Subscriber sub(2, grpc::CreateChannel(

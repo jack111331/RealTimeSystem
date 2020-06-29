@@ -1,0 +1,28 @@
+{
+  "Topic": [
+    {
+      "Name": "Topic_1",
+      "Period": 10,
+      "Deadline": 20000,
+      "SameRateTopicAmount": 150
+    },
+    {
+      "Name": "Topic_2",
+      "Period": 20,
+      "Deadline": 30000,
+      "SameRateTopicAmount": 50
+    },
+    {
+      "Name": "Topic_3",
+      "Period": 20,
+      "Deadline": 30000,
+      "SameRateTopicAmount": 10
+    },
+    {
+      "Name": "Topic_4",
+      "Period": 40,
+      "Deadline": 40000,
+      "SameRateTopicAmount": 200
+    }
+  ]
+}

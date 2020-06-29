@@ -1,1 +1,1 @@
-./es_sub
+./es_sub -c config.json
