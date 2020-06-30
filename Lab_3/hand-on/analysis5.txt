@@ -34,7 +34,7 @@ Publisher-to-Subscriber Latency Under 60% CPU Utilization Box plot說明:
 從這也可以推論FIFO是一個相對中規中矩的Scheduling Policy，雖然他的Average Latency相對其他兩個Scheduling Policies高上不少，但他優秀的99-th Percentile Latency顯示他在極端情況下仍可給出相對優良的Latency。
 而EDF與RM雖然99-th Percentile Latency相近，不過從Average Latency可以看出，EDF對比RM給出的Average Latency好相當多，但從Box Plot可以看出，EDF在部份Topic的表現上比RM還要差一些，因為EDF的Box Plot在第75-th percentile Latency比RM還要高。
 
-Publisher-to-Subscriber Latency Under 80% CPU Utilization Box plot說明:**
+Publisher-to-Subscriber Latency Under 80% CPU Utilization Box plot說明:
 在這張圖中，可以看出FIFO在Average Latency與99-th Percentile Latency比其餘兩個Scheduling Policy還要來的優秀。
 在較高的CPU Utilization的情況下，可以看出FIFO仍維持他一貫最優的99-th Percentile Latency，而且他的Average Latency相較其他兩個Scheduling Policies好上不少。個人認為他的99-th Percentile Latency相比其餘兩個Scheduling Policies好上不少是正常的，但我個人認為另兩個Scheduling Policies的Average Latency比FIFO還要來的高是不太正常的，我想可能是被特定幾個100 Percentile Latency給拉高不少，不過這也顯現出FIFO的表現對於每種Rate的Topic表現都相對穩定許多。
 
