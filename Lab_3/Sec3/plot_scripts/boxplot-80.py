@@ -33,7 +33,7 @@ print(mean_percentile)
 # so that
 #   (1) the highest tick is higher than the largest data value, and
 #   (2) the smallest data value is visible
-ax.set_ylim(-2,100)
+ax.set_ylim(-2,50)
 
 ax.set_xlabel('Scheduling Policies')
 ax.set_ylabel('Latency (milliseconds)')

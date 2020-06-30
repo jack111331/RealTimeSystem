@@ -10,7 +10,7 @@ sudo sh setCPUFreq.sh
 
 for policy in EDF RM FIFO;
 do
-    for load in $(seq 80 20 101);
+    for load in $(seq 20 20 101);
     do
         config_file=$CONFIG-$load.json
         # create a folder to store result of this config

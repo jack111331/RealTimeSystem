@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 scheduling_policies = ["EDF", "RM", "FIFO"]
 
 
-workload_percent = 100
+workload_percent = 80
 fig1, ax = plt.subplots()
 exp_path = '../makeup_exp/'
 
@@ -33,7 +33,7 @@ print(mean_percentile)
 # so that
 #   (1) the highest tick is higher than the largest data value, and
 #   (2) the smallest data value is visible
-ax.set_ylim(-2,50000)
+ax.set_ylim(-2,165)
 
 ax.set_xlabel('Scheduling Policies')
 ax.set_ylabel('Latency (milliseconds)')

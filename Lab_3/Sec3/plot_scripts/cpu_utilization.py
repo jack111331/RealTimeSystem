@@ -64,7 +64,7 @@ for x in range(0,3,1):
 
 sns.despine()
 plt.xlim(0,15)
-ax1.set_xticklabels(['60', '340', '600', '860', '1800'])
+ax1.set_xticklabels(['60', '340', '600', '1020', '1880'])
 ax1.set_xticks([1.5, 4.5, 7.5, 10.5, 13.5])
 ax1.set_ylim(0,105)
 
