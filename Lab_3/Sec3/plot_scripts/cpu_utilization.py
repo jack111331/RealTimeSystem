@@ -64,7 +64,7 @@ for x in range(0,3,1):
 
 sns.despine()
 plt.xlim(0,15)
-ax1.set_xticklabels(['60', '200', '340', '400', '650'])
+ax1.set_xticklabels(['60', '340', '600', '860', '1800'])
 ax1.set_xticks([1.5, 4.5, 7.5, 10.5, 13.5])
 ax1.set_ylim(0,105)
 
@@ -79,5 +79,5 @@ plt.legend((h_EDF,h_RM,h_FIFO),('EDF','RM','FIFO'),loc=2)#,
 #            borderaxespad=0.1)
 #plt.tight_layout()
 #plt.show()
-plt.savefig('../../exp/exp-prioritization/exp2-utilization.pdf',
+plt.savefig('cpu0-utilization.pdf',
            format='pdf', dpi=1000, bbox_inches='tight')

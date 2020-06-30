@@ -140,7 +140,12 @@ void parseConfig(const std::string &configFilename) {
 void signal_handler( int signal_num ) {
     // output: <total topic> <miss topic> <miss rate>
     for(auto i: endToEndLatency) {
-        std::cout << i << std::endl;
+        if(i >= 0) {
+            std::cout << i << std::endl;
+        } else {
+            // illegal latency, invalidate it
+            totalTopic--;
+        }
     }
     std::cout << totalTopic << " " << missTopic << " " << ((double)missTopic)/((double)totalTopic) << std::endl;
     // terminate program

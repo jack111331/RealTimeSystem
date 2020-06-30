@@ -17,5 +17,7 @@ do
     cat $i/temp3 > $i/latency
     rm $i/temp0
     rm $i/temp1
+    rm $i/temp2
+    rm $i/temp3
 done
  

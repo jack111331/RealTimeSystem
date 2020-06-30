@@ -95,7 +95,7 @@ struct MessageMeta {
 
 struct EDF {
   bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
-    return lhs.deadline < rhs.deadline;
+    return lhs.deadline > rhs.deadline;
   }
 };
 
@@ -107,7 +107,7 @@ struct RM {
 
 struct FIFO {
   bool operator () (const MessageMeta &lhs, const MessageMeta &rhs) const {
-    return lhs.arriveTime < rhs.arriveTime;
+    return lhs.arriveTime > rhs.arriveTime;
   }
 };
 

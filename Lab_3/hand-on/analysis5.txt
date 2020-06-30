@@ -1,0 +1,46 @@
+這個實驗的程式碼是從Section 2-1改過來的，在這個實驗的Broker主要改動的地方是在在從Priority Queue取資料出來時，使用一個Thread負責把資料放到Thread Pool中空的Thread，並用Conditional Variable通知該Thread，讓Thread使用Writer傳送資料給Subscriber。
+在Subscriber的地方，為避免實驗受到輸出I/O影響，每收到一次Topic，都會去計算他的Publisher-to-Subscriber Latency並記錄下來，並在Subscriber被Kill時將所有的Latency輸出，並在最後輸出總共收到幾個Topic，有幾個Topic Miss，以及計算出的Miss Rate。
+這些結果在Parse_utils.sh的幫助下將被統整到各個Scheduling Policy在不同的CPU Utilization資料夾下的latency與latency-statistic文件內。
+
+在設計Workload讓Workload分別可以對應到CPU Utilization的部份，我測量了很多次不同的Middle-rate topic amount，發現了一個問題。
+我在測量到一半時發現CPU Utilization常常會卡在某一個%數，後來發現會這樣是因為Publisher傳送Topic的速率不夠快，有蠻多原因，不過最主要的原因是Publisher用來傳送Topic給Broker的Thread數量不足，
+因為在Publisher這邊，我在Config裡面使用不同Topic name的數量來當作創建Thread的數量，因此我想到一個Tricky的辦法，
+既可以維持三種Rate的Topic種類，又能讓Broker收到更多的Topic並提高CPU Utilization。這方法就是在Config中增加不同Topic Name但相同設置的Middle-rate topic，如此一來就可以維持三種Topic設置，又可以增加Broker收到Topic的速率。
+
+CPU-Utilization Line Chart說明:
+Y軸代表Average CPU Utilization，X軸代表在High, Middle, Low rate topic的Deadline，Period設置相同，且High, Low rate topic的Topic amount設置相同的情況下，不同的Middle rate topic的Topic amount。
+觀察三種Scheduling Policy，發現三種Scheduling Policy在前三種Middle-rate topic amount表現出的CPU Utilization都大同小異。但後兩種Middle-rate topic amount表現出的CPU Utilization就有相當差距。
+我個人認為860 Middle-rate topic amount尚可採紀實驗結果，因為三種Scheduling Policy表現出的CPU Utilization相對接近，但1800 Middle-rate topic amount因為三種Scheduling Policy表現出的CPU Utilization差距蠻大的，
+因此在此次實驗中採紀1800 Middle-rate topic amount的結果是有失公允的。
+
+Latency Boxplot說明:
+因為在Plotting Script中將畫出異常值的選項關閉，因此有時會出現99-th Percentile比Boxplot最高點(Max Latency)還要高的情況。
+紅點代表99-th Percentile Publisher-to-Subscriber Latency，藍星代表Average Publisher-to-Subscriber Latency。
+Y軸代表Publisher-to-Subscriber Latency，單位以Millisecond表示。X軸代表不同的Scheduling Policy。
+
+Publisher-to-Subscriber Latency Under 20% CPU Utilization Box plot說明:
+在這張圖中，可以看出FIFO無論在Average Latency或是99-th Percentile Latency的表現都比其餘兩個Scheduling Policies還要來的優秀。這可能代表FIFO在確保執行環境在低CPU Utilization會是個好的Scheduling Policy的選擇。
+
+Publisher-to-Subscriber Latency Under 40% CPU Utilization Box plot說明:
+在這張圖中，可以看出EDF在Average Latency比其餘兩個Scheduling Policies還要來的優秀，而FIFO在99-th Percentile Latency比其餘兩個Scheduling Policies還要來的優秀。
+不過我覺得整體上還是FIFO較為優秀，因為FIFO的Average Latency雖非最優，但實際上他比最優的Scheduling Policy的Average Latency相差不遠，而且他的99-th Percentile Latency優秀的表現代表他在極端情況下仍能維持良好的Latency。
+
+Publisher-to-Subscriber Latency Under 60% CPU Utilization Box plot說明:
+在這張圖中，可以看出EDF與RM在Average Latency比FIFO的Average Latency還要來的優秀，而FIFO在99-th Percentile Latency比其餘兩個Scheduling Policy還要來的優秀。
+在較高的CPU Utilization的情況下，可以看出FIFO仍維持他一貫最優的99-th Percentile Latency，但他的Average Latency相較其他兩個Scheduling Policies來的高不少，
+從這也可以推論FIFO是一個相對中規中矩的Scheduling Policy，雖然他的Average Latency相對其他兩個Scheduling Policies高上不少，但他優秀的99-th Percentile Latency顯示他在極端情況下仍可給出相對優良的Latency。
+而EDF與RM雖然Average Latency相近，不過從99-th Percentile Latency可以看出，EDF相對RM在遇到極端情況時給出的Latency比RM好，但從Box Plot可以看出，EDF在部份Topic的表現上比RM還要差一些，因為EDF的Box Plot在第75-th percentile Latency比RM還要高。
+
+Publisher-to-Subscriber Latency Under 80% CPU Utilization Box plot說明:**
+在這張圖中，可以看出EDF與RM在Average Latency比FIFO的Average Latency還要來的優秀，而FIFO在99-th Percentile Latency比其餘兩個Scheduling Policy還要來的優秀。
+在較高的CPU Utilization的情況下，可以看出FIFO仍維持他一貫最優的99-th Percentile Latency，但他的Average Latency相較其他兩個Scheduling Policies來的高不少，
+從這也可以推論FIFO是一個相對中規中矩的Scheduling Policy，雖然他的Average Latency相對其他兩個Scheduling Policies高上不少，但他優秀的99-th Percentile Latency顯示他在極端情況下仍可給出相對優良的Latency。
+而EDF與RM雖然Average Latency相近，不過從99-th Percentile Latency可以看出，EDF相對RM在遇到極端情況時給出的Latency比RM好，但從Box Plot可以看出，EDF在部份Topic的表現上比RM還要差一些，因為EDF的Box Plot在第75-th percentile Latency比RM還要高。
+
+Publisher-to-Subscriber Latency Under 100% CPU Utilization Box plot說明:
+在這張圖中，可以看出EDF與RM在Average Latency比FIFO的Average Latency還要來的優秀相當多，而RM在99-th Percentile Latency比其餘兩個Scheduling Policy還要來的優秀相當多。
+在較高的CPU Utilization的情況下，可以看出FIFO的99-th Percentile Latency已非最優，而另外兩個Scheduling Polices在這種高負載的情況下表現都相當優秀，他們都把Average Latency壓的相當低，其中以RM的Average Latency為最優，不過他們共同的缺點是部份Topic的Latency會達到不可思議的高，這一點可以從99-th Percentile Latency看出。
+單就這張圖的結果可以論斷RM在高負載的情況下是相當優秀的，不過考量到CPU Utilization中顯示另兩個Scheduling Policies並無達到接近100%的數值，因此這張圖呈現出的結果是有待驗證的。
+
+
+在跑實驗的過程中，有好幾次都在跑完隔天發現有重大問題，得再重跑一次，可以說是非常的麻煩，不過幸好最後有跑出相對合理的結果，感覺也是相當不錯。 
